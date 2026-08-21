@@ -38,7 +38,10 @@ public class Steph {
             case "list" -> handleList(tasks);
             case "mark" -> handleMark(tasks, argument, true);
             case "unmark" -> handleMark(tasks, argument, false);
-            default -> handleAdd(tasks, command);
+            case "todo" -> handleAddToDo(tasks, argument);
+            case "deadline" -> handleAddDeadline(tasks, argument);
+            case "event" -> handleAddEvent(tasks, argument);
+            default -> printWrapped("Hmm.. I don't understand that command: \"" + keyword + "\".");
             }
         }
 
@@ -76,10 +79,65 @@ public class Steph {
         }
     }
 
-    private static void handleAdd(ArrayList<Task> tasks, String command) {
-        Task newTask = new Task(command);
+    private static void handleAddToDo(ArrayList<Task> tasks, String argument) {
+        if (argument.isEmpty()) {
+            printWrapped("Hmm.. I don't understand that.\nPlease type \"todo <task-name>\".");
+            return;
+        }
+        addTask(tasks, new ToDo(argument));
+    }
+
+    /**
+     * Parses "<task-name> /by <when>" and adds a Deadline task. The "/by" marker
+     * is used as the split point since a task name isn't expected to contain it.
+     */
+    private static void handleAddDeadline(ArrayList<Task> tasks, String argument) {
+        int byIndex = argument.indexOf("/by");
+        if (byIndex == -1) {
+            printWrapped("Hmm.. I don't understand that.\nPlease type \"deadline <task-name> /by <date/time>\".");
+            return;
+        }
+
+        String name = argument.substring(0, byIndex).trim();
+        String by = argument.substring(byIndex + "/by".length()).trim();
+        if (name.isEmpty() || by.isEmpty()) {
+            printWrapped("Hmm.. I don't understand that.\nPlease type \"deadline <task-name> /by <date/time>\".");
+            return;
+        }
+        addTask(tasks, new Deadline(name, by));
+    }
+
+    /**
+     * Parses "<task-name> /from <start> /to <end>" and adds an Event task, splitting
+     * first on "/from" and then on "/to" within the remainder.
+     */
+    private static void handleAddEvent(ArrayList<Task> tasks, String argument) {
+        int fromIndex = argument.indexOf("/from");
+        int toIndex = argument.indexOf("/to");
+        boolean validOrder = fromIndex != -1 && toIndex != -1 && fromIndex < toIndex;
+
+        if (!validOrder) {
+            printWrapped("Hmm.. I don't understand that.\n"
+                    + "Please type \"event <task-name> /from <start> /to <end>\".");
+            return;
+        }
+
+        String name = argument.substring(0, fromIndex).trim();
+        String from = argument.substring(fromIndex + "/from".length(), toIndex).trim();
+        String to = argument.substring(toIndex + "/to".length()).trim();
+
+        if (name.isEmpty() || from.isEmpty() || to.isEmpty()) {
+            printWrapped("Hmm.. I don't understand that.\n"
+                    + "Please type \"event <task-name> /from <start> /to <end>\".");
+            return;
+        }
+        addTask(tasks, new Event(name, from, to));
+    }
+
+    private static void addTask(ArrayList<Task> tasks, Task newTask) {
         tasks.add(newTask);
-        printWrapped("added: " + newTask);
+        printWrapped("Got it. I've added this task:\n  " + newTask
+                + "\nNow you have " + tasks.size() + " tasks in the list.");
     }
 
     /**
