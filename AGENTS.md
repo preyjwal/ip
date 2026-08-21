@@ -28,6 +28,15 @@ Unless the user says otherwise, assume that you are assisting a student working 
 
 Ensure that Java 25 is used when running the application or build tasks. On macOS, use `sdk use java 25.0.3.fx-zulu` to switch to Java 25 if needed.
 
+## Testing
+
+After every code update (any change under `src/main/java`), before treating the task as done:
+
+1. Update `test/ui-test-plan.md` if the change affects console output or adds/changes a command — add new test cases for new behavior, and update expected output for existing cases whose output legitimately changed. Generate expected-output blocks from a real run (the `test-ui` skill's `record` mode) rather than hand-typing them.
+2. Invoke the `test-ui` skill to run the test plan and confirm it passes.
+
+If the test plan fails, treat that as a signal to investigate before proceeding — either the change introduced a regression, or the expected output is stale and needs a deliberate update. Don't edit the test plan to match broken output just to make it pass.
+
 ## Git
 
 Use lightweight tags unless the user requests an annotated tag.
