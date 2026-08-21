@@ -38,15 +38,18 @@ public class Steph {
             // so every "can't understand this command" case is reported the same way
             // from one place, instead of each handler repeating printWrapped(...); return;
             try {
-                switch (keyword) {
-                case "list" -> handleList(tasks);
-                case "mark" -> handleMark(tasks, argument, true);
-                case "unmark" -> handleMark(tasks, argument, false);
-                case "todo" -> handleAddToDo(tasks, argument);
-                case "deadline" -> handleAddDeadline(tasks, argument);
-                case "event" -> handleAddEvent(tasks, argument);
-                case "delete" -> handleDeleteTask(tasks, argument);
-                default -> throw new StephException("Hmm.. I don't understand that command: \"" + keyword + "\".");
+                Command commandType = Command.fromKeyword(keyword);
+                if (commandType == null) {
+                    throw new StephException("Hmm.. I don't understand that command: \"" + keyword + "\".");
+                }
+                switch (commandType) {
+                case LIST -> handleList(tasks);
+                case MARK -> handleMark(tasks, argument, true);
+                case UNMARK -> handleMark(tasks, argument, false);
+                case TODO -> handleAddToDo(tasks, argument);
+                case DEADLINE -> handleAddDeadline(tasks, argument);
+                case EVENT -> handleAddEvent(tasks, argument);
+                case DELETE -> handleDeleteTask(tasks, argument);
                 }
             } catch (StephException e) {
                 printWrapped(e.getMessage());
