@@ -34,14 +34,21 @@ public class Steph {
             String keyword = parts[0];
             String argument = parts.length > 1 ? parts[1].trim() : "";
 
-            switch (keyword) {
-            case "list" -> handleList(tasks);
-            case "mark" -> handleMark(tasks, argument, true);
-            case "unmark" -> handleMark(tasks, argument, false);
-            case "todo" -> handleAddToDo(tasks, argument);
-            case "deadline" -> handleAddDeadline(tasks, argument);
-            case "event" -> handleAddEvent(tasks, argument);
-            default -> printWrapped("Hmm.. I don't understand that command: \"" + keyword + "\".");
+            // Handlers throw StephException instead of printing their own error message,
+            // so every "can't understand this command" case is reported the same way
+            // from one place, instead of each handler repeating printWrapped(...); return;
+            try {
+                switch (keyword) {
+                case "list" -> handleList(tasks);
+                case "mark" -> handleMark(tasks, argument, true);
+                case "unmark" -> handleMark(tasks, argument, false);
+                case "todo" -> handleAddToDo(tasks, argument);
+                case "deadline" -> handleAddDeadline(tasks, argument);
+                case "event" -> handleAddEvent(tasks, argument);
+                default -> throw new StephException("Hmm.. I don't understand that command: \"" + keyword + "\".");
+                }
+            } catch (StephException e) {
+                printWrapped(e.getMessage());
             }
         }
 
@@ -60,13 +67,12 @@ public class Steph {
         printWrapped(message.toString());
     }
 
-    private static void handleMark(ArrayList<Task> tasks, String argument, boolean markAsDone) {
+    private static void handleMark(ArrayList<Task> tasks, String argument, boolean markAsDone) throws StephException {
         int taskIndex = parseTaskIndex(argument, tasks.size());
         if (taskIndex == -1) {
             String commandName = markAsDone ? "mark" : "unmark";
-            printWrapped("Hmm.. I don't understand that.\n"
+            throw new StephException("Hmm.. I don't understand that.\n"
                     + "Please type \"" + commandName + " <task-number>\" with a valid task number.");
-            return;
         }
 
         Task task = tasks.get(taskIndex);
@@ -79,10 +85,9 @@ public class Steph {
         }
     }
 
-    private static void handleAddToDo(ArrayList<Task> tasks, String argument) {
+    private static void handleAddToDo(ArrayList<Task> tasks, String argument) throws StephException {
         if (argument.isEmpty()) {
-            printWrapped("Hmm.. I don't understand that.\nPlease type \"todo <task-name>\".");
-            return;
+            throw new StephException("Hmm.. I don't understand that.\nPlease type \"todo <task-name>\".");
         }
         addTask(tasks, new ToDo(argument));
     }
@@ -91,18 +96,18 @@ public class Steph {
      * Parses "<task-name> /by <when>" and adds a Deadline task. The "/by" marker
      * is used as the split point since a task name isn't expected to contain it.
      */
-    private static void handleAddDeadline(ArrayList<Task> tasks, String argument) {
+    private static void handleAddDeadline(ArrayList<Task> tasks, String argument) throws StephException {
         int byIndex = argument.indexOf("/by");
         if (byIndex == -1) {
-            printWrapped("Hmm.. I don't understand that.\nPlease type \"deadline <task-name> /by <date/time>\".");
-            return;
+            throw new StephException(
+                    "Hmm.. I don't understand that.\nPlease type \"deadline <task-name> /by <date/time>\".");
         }
 
         String name = argument.substring(0, byIndex).trim();
         String by = argument.substring(byIndex + "/by".length()).trim();
         if (name.isEmpty() || by.isEmpty()) {
-            printWrapped("Hmm.. I don't understand that.\nPlease type \"deadline <task-name> /by <date/time>\".");
-            return;
+            throw new StephException(
+                    "Hmm.. I don't understand that.\nPlease type \"deadline <task-name> /by <date/time>\".");
         }
         addTask(tasks, new Deadline(name, by));
     }
@@ -111,15 +116,14 @@ public class Steph {
      * Parses "<task-name> /from <start> /to <end>" and adds an Event task, splitting
      * first on "/from" and then on "/to" within the remainder.
      */
-    private static void handleAddEvent(ArrayList<Task> tasks, String argument) {
+    private static void handleAddEvent(ArrayList<Task> tasks, String argument) throws StephException {
         int fromIndex = argument.indexOf("/from");
         int toIndex = argument.indexOf("/to");
         boolean validOrder = fromIndex != -1 && toIndex != -1 && fromIndex < toIndex;
 
         if (!validOrder) {
-            printWrapped("Hmm.. I don't understand that.\n"
+            throw new StephException("Hmm.. I don't understand that.\n"
                     + "Please type \"event <task-name> /from <start> /to <end>\".");
-            return;
         }
 
         String name = argument.substring(0, fromIndex).trim();
@@ -127,9 +131,8 @@ public class Steph {
         String to = argument.substring(toIndex + "/to".length()).trim();
 
         if (name.isEmpty() || from.isEmpty() || to.isEmpty()) {
-            printWrapped("Hmm.. I don't understand that.\n"
+            throw new StephException("Hmm.. I don't understand that.\n"
                     + "Please type \"event <task-name> /from <start> /to <end>\".");
-            return;
         }
         addTask(tasks, new Event(name, from, to));
     }
