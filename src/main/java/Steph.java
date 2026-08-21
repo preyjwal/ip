@@ -45,6 +45,7 @@ public class Steph {
                 case "todo" -> handleAddToDo(tasks, argument);
                 case "deadline" -> handleAddDeadline(tasks, argument);
                 case "event" -> handleAddEvent(tasks, argument);
+                case "delete" -> handleDeleteTask(tasks, argument);
                 default -> throw new StephException("Hmm.. I don't understand that command: \"" + keyword + "\".");
                 }
             } catch (StephException e) {
@@ -135,6 +136,18 @@ public class Steph {
                     + "Please type \"event <task-name> /from <start> /to <end>\".");
         }
         addTask(tasks, new Event(name, from, to));
+    }
+
+    private static void handleDeleteTask(ArrayList<Task> tasks, String argument) throws StephException {
+        int taskIndex = parseTaskIndex(argument, tasks.size());
+        if (taskIndex == -1) {
+            throw new StephException("Hmm.. I don't understand that.\n"
+                    + "Please type \"delete <task-number>\" with a valid task number.");
+        }
+        Task deletedTask = tasks.get(taskIndex);
+        tasks.remove(taskIndex);
+        printWrapped("Okay! I've removed this task:\n  " + deletedTask
+                + "\nNow you have " + tasks.size() + " tasks in the list.");
     }
 
     private static void addTask(ArrayList<Task> tasks, Task newTask) {

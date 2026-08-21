@@ -147,6 +147,87 @@ OK, I've marked this task as not done yet:
   [T][ ] borrow book
 ```
 
+## Test case: Delete a task
+
+**Aim:** `delete` removes the task at the given 1-based position, shifts the
+remaining tasks up, and `list` reflects the updated numbering.
+
+### Command
+```
+todo borrow book
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [T][ ] borrow book
+Now you have 1 tasks in the list.
+```
+
+### Command
+```
+todo return book
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [T][ ] return book
+Now you have 2 tasks in the list.
+```
+
+### Command
+```
+delete 1
+```
+
+### Expected output
+```
+Okay! I've removed this task:
+  [T][ ] borrow book
+Now you have 1 tasks in the list.
+```
+
+### Command
+```
+list
+```
+
+### Expected output
+```
+Here are the tasks in your list:
+1.[T][ ] return book
+```
+
+## Test case: Delete with an out-of-range task number is rejected
+
+**Aim:** `delete` reuses the same task-number validation as `mark`/`unmark`,
+so a number beyond the end of the list should report a usage error instead
+of throwing an `IndexOutOfBoundsException`.
+
+### Command
+```
+todo borrow book
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [T][ ] borrow book
+Now you have 1 tasks in the list.
+```
+
+### Command
+```
+delete 5
+```
+
+### Expected output
+```
+Hmm.. I don't understand that.
+Please type "delete <task-number>" with a valid task number.
+```
+
 ## Test case: Deadline missing /by is rejected
 
 **Aim:** A `deadline` command with no `/by` marker should not silently create
