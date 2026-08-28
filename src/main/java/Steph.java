@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -7,7 +8,15 @@ public class Steph {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        ArrayList<Task> tasks = new ArrayList<>();
+        Storage storage = new Storage("./data/steph.txt");
+        ArrayList<Task> tasks;
+
+        try {
+            tasks = storage.load();
+        } catch (IOException e) {
+            printWrapped("Sorry, I couldn't read the save file. Starting with an empty list.");
+            tasks = new ArrayList<>();
+        }
 
         String banner = " ____  _             _     \n"
                 + "/ ___|| |_ ___ _ __ | |__  \n"
@@ -51,8 +60,15 @@ public class Steph {
                 case EVENT -> handleAddEvent(tasks, argument);
                 case DELETE -> handleDeleteTask(tasks, argument);
                 }
+
+                if (commandType != Command.LIST) { // Every other command mutates the tasks list
+                    storage.save(tasks);
+                }
+
             } catch (StephException e) {
                 printWrapped(e.getMessage());
+            } catch (IOException e) {
+                printWrapped("Sorry, I couldn't save your tasks: " + e.getMessage());
             }
         }
 

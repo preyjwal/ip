@@ -277,3 +277,99 @@ foo bar
 ```
 Hmm.. I don't understand that command: "foo".
 ```
+
+## Test case: Tasks are saved and reloaded across restarts
+
+**Aim:** The task list is written to `./data/steph.txt` after every change and
+read back when Steph starts, so a task added in one session is still there in
+the next. Checks all three task types round-trip, that a task's done status
+(`mark`) is preserved, and that a change made after a restart (`delete`) is
+itself saved for the following restart.
+
+### Command
+```
+todo read book
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [T][ ] read book
+Now you have 1 tasks in the list.
+```
+
+### Command
+```
+deadline return book /by Sunday
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [D][ ] return book (by: Sunday)
+Now you have 2 tasks in the list.
+```
+
+### Command
+```
+event project meeting /from Mon 2pm /to 4pm
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [E][ ] project meeting (from: Mon 2pm to: 4pm)
+Now you have 3 tasks in the list.
+```
+
+### Command
+```
+mark 2
+```
+
+### Expected output
+```
+Awesome! I've marked this task as done:
+  [D][X] return book (by: Sunday)
+```
+
+### Restart
+
+### Command
+```
+list
+```
+
+### Expected output
+```
+Here are the tasks in your list:
+1.[T][ ] read book
+2.[D][X] return book (by: Sunday)
+3.[E][ ] project meeting (from: Mon 2pm to: 4pm)
+```
+
+### Command
+```
+delete 1
+```
+
+### Expected output
+```
+Okay! I've removed this task:
+  [T][ ] read book
+Now you have 2 tasks in the list.
+```
+
+### Restart
+
+### Command
+```
+list
+```
+
+### Expected output
+```
+Here are the tasks in your list:
+1.[D][X] return book (by: Sunday)
+2.[E][ ] project meeting (from: Mon 2pm to: 4pm)
+```
