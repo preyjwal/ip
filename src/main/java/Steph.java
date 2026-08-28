@@ -1,5 +1,5 @@
 import java.io.IOException;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -115,8 +115,8 @@ public class Steph {
     }
 
     /**
-     * Parses "<task-name> /by <yyyy-mm-dd>" and adds a Deadline task. The "/by"
-     * marker is used as the split point since a task name isn't expected to
+     * Parses "<task-name> /by <yyyy-mm-dd> [HHmm]" and adds a Deadline task. The
+     * "/by" marker is used as the split point since a task name isn't expected to
      * contain it.
      */
     private static void handleAddDeadline(ArrayList<Task> tasks, String argument) throws StephException {
@@ -132,12 +132,13 @@ public class Steph {
             throw new StephException(
                     "Hmm.. I don't understand that.\nPlease type \"deadline <task-name> /by <yyyy-mm-dd>\".");
         }
-        addTask(tasks, new Deadline(name, parseDate(by)));
+        addTask(tasks, new Deadline(name, parseDateTime(by)));
     }
 
     /**
-     * Parses "<task-name> /from <yyyy-mm-dd> /to <yyyy-mm-dd>" and adds an Event
-     * task, splitting first on "/from" and then on "/to" within the remainder.
+     * Parses "<task-name> /from <yyyy-mm-dd> [HHmm] /to <yyyy-mm-dd> [HHmm]" and
+     * adds an Event task, splitting first on "/from" and then on "/to" within
+     * the remainder.
      */
     private static void handleAddEvent(ArrayList<Task> tasks, String argument) throws StephException {
         int fromIndex = argument.indexOf("/from");
@@ -157,20 +158,22 @@ public class Steph {
             throw new StephException("Hmm.. I don't understand that.\n"
                     + "Please type \"event <task-name> /from <yyyy-mm-dd> /to <yyyy-mm-dd>\".");
         }
-        addTask(tasks, new Event(name, parseDate(from), parseDate(to)));
+        addTask(tasks, new Event(name, parseDateTime(from), parseDateTime(to)));
     }
 
     /**
-     * Parses a user-supplied date in ISO format ("yyyy-mm-dd", e.g. 2019-10-15).
-     * Throws a StephException with a readable hint if the text isn't a valid date,
-     * so the mistake is reported like any other bad command instead of crashing.
+     * Parses a user-supplied date, with an optional 24-hour time
+     * ("yyyy-mm-dd" or "yyyy-mm-dd HHmm", e.g. 2019-10-15 1800). A date with no
+     * time is taken as midnight. Throws a StephException with a readable hint if
+     * the text isn't valid, so the mistake is reported like any other bad
+     * command instead of crashing.
      */
-    private static LocalDate parseDate(String text) throws StephException {
+    private static LocalDateTime parseDateTime(String text) throws StephException {
         try {
-            return LocalDate.parse(text);
+            return DateTimes.parseUserInput(text);
         } catch (DateTimeParseException e) {
             throw new StephException("Hmm.. I couldn't read \"" + text + "\" as a date.\n"
-                    + "Please use the format yyyy-mm-dd, e.g. 2019-10-15.");
+                    + "Please use the format yyyy-mm-dd or yyyy-mm-dd HHmm, e.g. 2019-10-15 1800.");
         }
     }
 

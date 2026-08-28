@@ -2,7 +2,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 
@@ -50,8 +49,8 @@ public class Storage {
      * Parses one save-file line into the matching Task subclass.
      * Assumes task descriptions contain no '|' characters.
      *
-     * @param line A line in the format "T | 1 | name" (D and E add ISO dates:
-     *             "D | 1 | name | 2019-10-15").
+     * @param line A line in the format "T | 1 | name" (D and E add ISO
+     *             date-times: "D | 1 | name | 2019-10-15T18:00").
      * @return The reconstructed task, marked done when the status flag is "1".
      * @throws StephException If the line has an unknown type, is missing fields,
      *                        or holds an unparseable date.
@@ -66,8 +65,8 @@ public class Storage {
         try {
             Task task = switch (parts[0]) {
                 case "T" -> new ToDo(parts[2]);
-                case "D" -> new Deadline(parts[2], LocalDate.parse(parts[3]));
-                case "E" -> new Event(parts[2], LocalDate.parse(parts[3]), LocalDate.parse(parts[4]));
+                case "D" -> new Deadline(parts[2], DateTimes.parseStored(parts[3]));
+                case "E" -> new Event(parts[2], DateTimes.parseStored(parts[3]), DateTimes.parseStored(parts[4]));
                 default -> throw new StephException("Unknown task type in line: " + line);
             };
 

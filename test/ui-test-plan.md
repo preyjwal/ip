@@ -128,6 +128,53 @@ Got it. I've added this task:
 Now you have 1 tasks in the list.
 ```
 
+## Test case: Add a deadline with a time
+
+**Aim:** A `deadline` whose `/by` value is `yyyy-mm-dd HHmm` is stored as a
+`LocalDateTime`; the `HHmm` time is parsed as 24-hour and shown after the date
+as `h:mma` (e.g. `6:00pm`). A morning time confirms `9:00am` too.
+
+### Command
+```
+deadline return book /by 2019-10-15 1800
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [D][ ] return book (by: Oct 15 2019, 6:00pm)
+Now you have 1 tasks in the list.
+```
+
+### Command
+```
+deadline early bird /by 2019-10-15 0900
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [D][ ] early bird (by: Oct 15 2019, 9:00am)
+Now you have 2 tasks in the list.
+```
+
+## Test case: Add an event with start and end times
+
+**Aim:** An `event` accepts a `yyyy-mm-dd HHmm` value on both `/from` and `/to`,
+storing each as a `LocalDateTime` and showing the time alongside the date.
+
+### Command
+```
+event project meeting /from 2019-10-15 1400 /to 2019-10-15 1600
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [E][ ] project meeting (from: Oct 15 2019, 2:00pm to: Oct 15 2019, 4:00pm)
+Now you have 1 tasks in the list.
+```
+
 ## Test case: Mark and unmark a task
 
 **Aim:** `mark` sets a task's checkbox to `[X]` and `unmark` sets it back to
@@ -277,7 +324,7 @@ deadline submit report /by next friday
 ### Expected output
 ```
 Hmm.. I couldn't read "next friday" as a date.
-Please use the format yyyy-mm-dd, e.g. 2019-10-15.
+Please use the format yyyy-mm-dd or yyyy-mm-dd HHmm, e.g. 2019-10-15 1800.
 ```
 
 ## Test case: Unknown command is rejected
@@ -390,4 +437,46 @@ list
 Here are the tasks in your list:
 1.[D][X] return book (by: Oct 15 2019)
 2.[E][ ] project meeting (from: Oct 15 2019 to: Oct 16 2019)
+```
+
+## Test case: A deadline's time survives a restart
+
+**Aim:** The `HHmm` time on a deadline is written to `./data/steph.txt` as part
+of an ISO `LocalDateTime` (`2019-10-15T18:00`) and read back unchanged on
+startup, so the displayed time is the same before and after a restart.
+
+### Command
+```
+deadline return book /by 2019-10-15 1800
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [D][ ] return book (by: Oct 15 2019, 6:00pm)
+Now you have 1 tasks in the list.
+```
+
+### Command
+```
+list
+```
+
+### Expected output
+```
+Here are the tasks in your list:
+1.[D][ ] return book (by: Oct 15 2019, 6:00pm)
+```
+
+### Restart
+
+### Command
+```
+list
+```
+
+### Expected output
+```
+Here are the tasks in your list:
+1.[D][ ] return book (by: Oct 15 2019, 6:00pm)
 ```

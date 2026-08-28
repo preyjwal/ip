@@ -1,0 +1,88 @@
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+
+/**
+ * Helpers for reading and displaying the date-and-time values attached to
+ * {@link Deadline} and {@link Event} tasks. Kept in one place so the command
+ * parser ({@link Steph}), the save-file parser ({@link Storage}), and the task
+ * classes all agree on how a date-time is written and shown.
+ */
+public final class DateTimes {
+
+    /** User input format for the optional time part: an ISO date, a space, then a 24-hour "HHmm", e.g. "2019-10-15 1800". */
+    private static final DateTimeFormatter INPUT_WITH_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm");
+
+    /** Display format when a time is present, e.g. "Oct 15 2019, 6:00PM". */
+    private static final DateTimeFormatter DISPLAY_WITH_TIME = DateTimeFormatter.ofPattern("MMM dd yyyy, h:mma");
+
+    /** Display format when the time is midnight (i.e. the user gave only a date), e.g. "Oct 15 2019". */
+    private static final DateTimeFormatter DISPLAY_DATE_ONLY = DateTimeFormatter.ofPattern("MMM dd yyyy");
+
+    private DateTimes() {
+        // Utility class: all members are static, so there's nothing to instantiate.
+    }
+
+    /**
+     * Parses text the user typed after {@code /by}, {@code /from}, or {@code /to}.
+     * Accepts "yyyy-mm-dd" or "yyyy-mm-dd HHmm"; when only a date is given the
+     * time defaults to midnight (00:00).
+     *
+     * @param text the date (and optional time) as typed by the user
+     * @return the parsed date-time
+     * @throws DateTimeParseException if the text matches neither accepted format
+     */
+    static LocalDateTime parseUserInput(String text) throws DateTimeParseException {
+        try {
+            return LocalDateTime.parse(text, INPUT_WITH_TIME);
+        } catch (DateTimeParseException timePartMissing) {
+            // No "HHmm" part -- fall back to a plain date at the start of the day.
+            return LocalDate.parse(text).atStartOfDay();
+        }
+    }
+
+    /**
+     * Reads a value previously written by {@link #toStorageFormat}. Accepts the
+     * ISO {@code LocalDateTime} form ("2019-10-15T18:00") and a plain ISO
+     * date ("2019-10-15").
+     *
+     * @param text one date-time field from a save-file line
+     * @return the parsed date-time
+     * @throws DateTimeParseException if the text is neither form
+     */
+    static LocalDateTime parseStored(String text) throws DateTimeParseException {
+        try {
+            return LocalDateTime.parse(text);
+        } catch (DateTimeParseException notDateTime) {
+            return LocalDate.parse(text).atStartOfDay();
+        }
+    }
+
+    /**
+     * Formats a date-time for the save file. {@code LocalDateTime.toString()} is
+     * ISO-8601 ("2019-10-15T18:00"), which {@link #parseStored} reads back
+     * without a formatter, so the file stays round-trippable.
+     *
+     * @param dateTime the value to write
+     * @return the ISO-8601 text
+     */
+    static String toStorageFormat(LocalDateTime dateTime) {
+        return dateTime.toString();
+    }
+
+    /**
+     * Formats a date-time for display, omitting the time when it is midnight
+     * (which is what a date-only command produces).
+     *
+     * @param dateTime the value to show
+     * @return e.g. "Oct 15 2019" or "Oct 15 2019, 6:00PM"
+     */
+    static String toDisplayFormat(LocalDateTime dateTime) {
+        if (dateTime.toLocalTime().equals(LocalTime.MIDNIGHT)) {
+            return dateTime.format(DISPLAY_DATE_ONLY);
+        }
+        return dateTime.format(DISPLAY_WITH_TIME);
+    }
+}
