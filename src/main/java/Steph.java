@@ -2,40 +2,27 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class Steph {
-    private static final String NAME = "Steph";
-    private static final String LINE = "____________________________________________________________";
 
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+        Ui ui = new Ui();
         Storage storage = new Storage("./data/steph.txt");
         ArrayList<Task> tasks;
 
         try {
             tasks = storage.load();
         } catch (IOException e) {
-            printWrapped("Sorry, I couldn't read the save file. Starting with an empty list.");
+            ui.showLoadingError();
             tasks = new ArrayList<>();
         }
 
-        String banner = " ____  _             _     \n"
-                + "/ ___|| |_ ___ _ __ | |__  \n"
-                + "\\___ \\| __/ _ \\ '_ \\| '_ \\ \n"
-                + " ___) | ||  __/ |_) | | | |\n"
-                + "|____/ \\__\\___| .__/|_| |_|\n"
-                + "              |_|";
-
-        System.out.println(LINE);
-        System.out.println(banner);
-        System.out.printf("Hello! I'm %s.%nGlad to see you!%nWhat can I help you with?%n", NAME);
-        System.out.println(LINE);
+        ui.showWelcome();
 
         // Process each command until the user types "bye", or input runs out
         // (e.g. when input is piped from a file instead of typed interactively).
-        while (scanner.hasNextLine()) {
-            String command = scanner.nextLine().trim();
+        while (ui.hasNextCommand()) {
+            String command = ui.readCommand();
             if (command.equals("bye")) {
                 break;
             }
@@ -47,20 +34,20 @@ public class Steph {
 
             // Handlers throw StephException instead of printing their own error message,
             // so every "can't understand this command" case is reported the same way
-            // from one place, instead of each handler repeating printWrapped(...); return;
+            // from one place, instead of each handler repeating ui.showError(...); return;
             try {
                 Command commandType = Command.fromKeyword(keyword);
                 if (commandType == null) {
                     throw new StephException("Hmm.. I don't understand that command: \"" + keyword + "\".");
                 }
                 switch (commandType) {
-                case LIST -> handleList(tasks);
-                case MARK -> handleMark(tasks, argument, true);
-                case UNMARK -> handleMark(tasks, argument, false);
-                case TODO -> handleAddToDo(tasks, argument);
-                case DEADLINE -> handleAddDeadline(tasks, argument);
-                case EVENT -> handleAddEvent(tasks, argument);
-                case DELETE -> handleDeleteTask(tasks, argument);
+                case LIST -> handleList(ui, tasks);
+                case MARK -> handleMark(ui, tasks, argument, true);
+                case UNMARK -> handleMark(ui, tasks, argument, false);
+                case TODO -> handleAddToDo(ui, tasks, argument);
+                case DEADLINE -> handleAddDeadline(ui, tasks, argument);
+                case EVENT -> handleAddEvent(ui, tasks, argument);
+                case DELETE -> handleDeleteTask(ui, tasks, argument);
                 }
 
                 if (commandType != Command.LIST) { // Every other command mutates the tasks list
@@ -68,28 +55,26 @@ public class Steph {
                 }
 
             } catch (StephException e) {
-                printWrapped(e.getMessage());
+                ui.showError(e.getMessage());
             } catch (IOException e) {
-                printWrapped("Sorry, I couldn't save your tasks: " + e.getMessage());
+                ui.showError("Sorry, I couldn't save your tasks: " + e.getMessage());
             }
         }
 
-        System.out.println(LINE);
-        System.out.println("Goodbye. Hope to see you again soon!");
-        System.out.println(LINE);
-
-        scanner.close();
+        ui.showGoodbye();
+        ui.close();
     }
 
-    private static void handleList(ArrayList<Task> tasks) {
+    private static void handleList(Ui ui, ArrayList<Task> tasks) {
         StringBuilder message = new StringBuilder("Here are the tasks in your list:");
         for (int i = 0; i < tasks.size(); i++) {
             message.append("\n").append(i + 1).append(".").append(tasks.get(i));
         }
-        printWrapped(message.toString());
+        ui.showMessage(message.toString());
     }
 
-    private static void handleMark(ArrayList<Task> tasks, String argument, boolean markAsDone) throws StephException {
+    private static void handleMark(Ui ui, ArrayList<Task> tasks, String argument, boolean markAsDone)
+            throws StephException {
         int taskIndex = parseTaskIndex(argument, tasks.size());
         if (taskIndex == -1) {
             String commandName = markAsDone ? "mark" : "unmark";
@@ -100,18 +85,18 @@ public class Steph {
         Task task = tasks.get(taskIndex);
         if (markAsDone) {
             task.complete();
-            printWrapped("Awesome! I've marked this task as done:\n  " + task);
+            ui.showMessage("Awesome! I've marked this task as done:\n  " + task);
         } else {
             task.uncomplete();
-            printWrapped("OK, I've marked this task as not done yet:\n  " + task);
+            ui.showMessage("OK, I've marked this task as not done yet:\n  " + task);
         }
     }
 
-    private static void handleAddToDo(ArrayList<Task> tasks, String argument) throws StephException {
+    private static void handleAddToDo(Ui ui, ArrayList<Task> tasks, String argument) throws StephException {
         if (argument.isEmpty()) {
             throw new StephException("Hmm.. I don't understand that.\nPlease type \"todo <task-name>\".");
         }
-        addTask(tasks, new ToDo(argument));
+        addTask(ui, tasks, new ToDo(argument));
     }
 
     /**
@@ -119,7 +104,7 @@ public class Steph {
      * task. The "/by" marker is used as the split point since a task name isn't
      * expected to contain it.
      */
-    private static void handleAddDeadline(ArrayList<Task> tasks, String argument) throws StephException {
+    private static void handleAddDeadline(Ui ui, ArrayList<Task> tasks, String argument) throws StephException {
         int byIndex = argument.indexOf("/by");
         if (byIndex == -1) {
             throw new StephException(
@@ -132,7 +117,7 @@ public class Steph {
             throw new StephException(
                     "Hmm.. I don't understand that.\nPlease type \"deadline <task-name> /by <yyyy-mm-dd>\".");
         }
-        addTask(tasks, new Deadline(name, parseDateTime(by)));
+        addTask(ui, tasks, new Deadline(name, parseDateTime(by)));
     }
 
     /**
@@ -140,7 +125,7 @@ public class Steph {
      * [HHmm]} and adds an Event task, splitting first on "/from" and then on
      * "/to" within the remainder.
      */
-    private static void handleAddEvent(ArrayList<Task> tasks, String argument) throws StephException {
+    private static void handleAddEvent(Ui ui, ArrayList<Task> tasks, String argument) throws StephException {
         int fromIndex = argument.indexOf("/from");
         int toIndex = argument.indexOf("/to");
         boolean validOrder = fromIndex != -1 && toIndex != -1 && fromIndex < toIndex;
@@ -158,7 +143,7 @@ public class Steph {
             throw new StephException("Hmm.. I don't understand that.\n"
                     + "Please type \"event <task-name> /from <yyyy-mm-dd> /to <yyyy-mm-dd>\".");
         }
-        addTask(tasks, new Event(name, parseDateTime(from), parseDateTime(to)));
+        addTask(ui, tasks, new Event(name, parseDateTime(from), parseDateTime(to)));
     }
 
     /**
@@ -177,7 +162,7 @@ public class Steph {
         }
     }
 
-    private static void handleDeleteTask(ArrayList<Task> tasks, String argument) throws StephException {
+    private static void handleDeleteTask(Ui ui, ArrayList<Task> tasks, String argument) throws StephException {
         int taskIndex = parseTaskIndex(argument, tasks.size());
         if (taskIndex == -1) {
             throw new StephException("Hmm.. I don't understand that.\n"
@@ -185,13 +170,13 @@ public class Steph {
         }
         Task deletedTask = tasks.get(taskIndex);
         tasks.remove(taskIndex);
-        printWrapped("Okay! I've removed this task:\n  " + deletedTask
+        ui.showMessage("Okay! I've removed this task:\n  " + deletedTask
                 + "\nNow you have " + tasks.size() + " tasks in the list.");
     }
 
-    private static void addTask(ArrayList<Task> tasks, Task newTask) {
+    private static void addTask(Ui ui, ArrayList<Task> tasks, Task newTask) {
         tasks.add(newTask);
-        printWrapped("Got it. I've added this task:\n  " + newTask
+        ui.showMessage("Got it. I've added this task:\n  " + newTask
                 + "\nNow you have " + tasks.size() + " tasks in the list.");
     }
 
@@ -210,11 +195,5 @@ public class Steph {
         } catch (NumberFormatException e) {
             return -1;
         }
-    }
-
-    private static void printWrapped(String message) {
-        System.out.println(LINE);
-        System.out.println(message);
-        System.out.println(LINE);
     }
 }
