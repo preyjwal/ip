@@ -2,6 +2,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 
 public class Storage {
@@ -48,9 +50,11 @@ public class Storage {
      * Parses one save-file line into the matching Task subclass.
      * Assumes task descriptions contain no '|' characters.
      *
-     * @param line A line in the format "T | 1 | name" (with extra fields for D and E).
+     * @param line A line in the format "T | 1 | name" (D and E add ISO dates:
+     *             "D | 1 | name | 2019-10-15").
      * @return The reconstructed task, marked done when the status flag is "1".
-     * @throws StephException If the line has an unknown type or is missing fields.
+     * @throws StephException If the line has an unknown type, is missing fields,
+     *                        or holds an unparseable date.
      */
     private Task parseTask(String line) throws StephException {
         String[] parts = line.split("\\|");
@@ -62,8 +66,8 @@ public class Storage {
         try {
             Task task = switch (parts[0]) {
                 case "T" -> new ToDo(parts[2]);
-                case "D" -> new Deadline(parts[2], parts[3]);
-                case "E" -> new Event(parts[2], parts[3], parts[4]);
+                case "D" -> new Deadline(parts[2], LocalDate.parse(parts[3]));
+                case "E" -> new Event(parts[2], LocalDate.parse(parts[3]), LocalDate.parse(parts[4]));
                 default -> throw new StephException("Unknown task type in line: " + line);
             };
 
@@ -72,8 +76,8 @@ public class Storage {
             }
 
             return task;
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw new StephException("Line is missing fields: " + line);
+        } catch (ArrayIndexOutOfBoundsException | DateTimeParseException e) {
+            throw new StephException("Line is malformed: " + line);
         }
     }
 }
