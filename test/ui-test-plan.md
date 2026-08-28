@@ -95,34 +95,36 @@ Here are the tasks in your list:
 ## Test case: Add a deadline
 
 **Aim:** A `deadline` command splits its argument on `/by` into the task name
-and the due date/time, and displays both with the `[D]` marker.
+and the due date, parses the date from `yyyy-mm-dd`, and displays it in
+`MMM dd yyyy` form with the `[D]` marker.
 
 ### Command
 ```
-deadline return book /by Sunday
+deadline return book /by 2019-10-15
 ```
 
 ### Expected output
 ```
 Got it. I've added this task:
-  [D][ ] return book (by: Sunday)
+  [D][ ] return book (by: Oct 15 2019)
 Now you have 1 tasks in the list.
 ```
 
 ## Test case: Add an event
 
 **Aim:** An `event` command splits its argument on `/from` and `/to` into the
-task name, start, and end, and displays all three with the `[E]` marker.
+task name, start date, and end date, parses each date from `yyyy-mm-dd`, and
+displays them in `MMM dd yyyy` form with the `[E]` marker.
 
 ### Command
 ```
-event project meeting /from Mon 2pm /to 4pm
+event project meeting /from 2019-10-15 /to 2019-10-16
 ```
 
 ### Expected output
 ```
 Got it. I've added this task:
-  [E][ ] project meeting (from: Mon 2pm to: 4pm)
+  [E][ ] project meeting (from: Oct 15 2019 to: Oct 16 2019)
 Now you have 1 tasks in the list.
 ```
 
@@ -259,7 +261,23 @@ deadline missing name
 ### Expected output
 ```
 Hmm.. I don't understand that.
-Please type "deadline <task-name> /by <date/time>".
+Please type "deadline <task-name> /by <yyyy-mm-dd>".
+```
+
+## Test case: Deadline with an unparseable date is rejected
+
+**Aim:** A `deadline` command whose `/by` value isn't a valid `yyyy-mm-dd`
+date reports a readable hint instead of crashing on `DateTimeParseException`.
+
+### Command
+```
+deadline submit report /by next friday
+```
+
+### Expected output
+```
+Hmm.. I couldn't read "next friday" as a date.
+Please use the format yyyy-mm-dd, e.g. 2019-10-15.
 ```
 
 ## Test case: Unknown command is rejected
@@ -300,25 +318,25 @@ Now you have 1 tasks in the list.
 
 ### Command
 ```
-deadline return book /by Sunday
+deadline return book /by 2019-10-15
 ```
 
 ### Expected output
 ```
 Got it. I've added this task:
-  [D][ ] return book (by: Sunday)
+  [D][ ] return book (by: Oct 15 2019)
 Now you have 2 tasks in the list.
 ```
 
 ### Command
 ```
-event project meeting /from Mon 2pm /to 4pm
+event project meeting /from 2019-10-15 /to 2019-10-16
 ```
 
 ### Expected output
 ```
 Got it. I've added this task:
-  [E][ ] project meeting (from: Mon 2pm to: 4pm)
+  [E][ ] project meeting (from: Oct 15 2019 to: Oct 16 2019)
 Now you have 3 tasks in the list.
 ```
 
@@ -330,7 +348,7 @@ mark 2
 ### Expected output
 ```
 Awesome! I've marked this task as done:
-  [D][X] return book (by: Sunday)
+  [D][X] return book (by: Oct 15 2019)
 ```
 
 ### Restart
@@ -344,8 +362,8 @@ list
 ```
 Here are the tasks in your list:
 1.[T][ ] read book
-2.[D][X] return book (by: Sunday)
-3.[E][ ] project meeting (from: Mon 2pm to: 4pm)
+2.[D][X] return book (by: Oct 15 2019)
+3.[E][ ] project meeting (from: Oct 15 2019 to: Oct 16 2019)
 ```
 
 ### Command
@@ -370,6 +388,6 @@ list
 ### Expected output
 ```
 Here are the tasks in your list:
-1.[D][X] return book (by: Sunday)
-2.[E][ ] project meeting (from: Mon 2pm to: 4pm)
+1.[D][X] return book (by: Oct 15 2019)
+2.[E][ ] project meeting (from: Oct 15 2019 to: Oct 16 2019)
 ```
