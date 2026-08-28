@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Storage {
     private final Path path;
@@ -33,10 +34,10 @@ public class Storage {
      * If there is no file at that filepath, it creates a new file and writes to it.
      * Called after every change and overwrites the whole file.
      *
-     * @param tasks List of tasks.
+     * @param tasks the tasks to write, in order
      * @throws IOException If an I/O error occurs
      */
-    public void save(ArrayList<Task> tasks) throws IOException {
+    public void save(List<Task> tasks) throws IOException {
         Files.createDirectories(this.path.getParent());
         ArrayList<String> lines = new ArrayList<>();
         for (Task task : tasks) {

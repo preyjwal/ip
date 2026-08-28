@@ -1,20 +1,19 @@
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 
 public class Steph {
 
     public static void main(String[] args) {
         Ui ui = new Ui();
         Storage storage = new Storage("./data/steph.txt");
-        ArrayList<Task> tasks;
+        TaskList tasks;
 
         try {
-            tasks = storage.load();
+            tasks = new TaskList(storage.load());
         } catch (IOException e) {
             ui.showLoadingError();
-            tasks = new ArrayList<>();
+            tasks = new TaskList();
         }
 
         ui.showWelcome();
@@ -51,7 +50,7 @@ public class Steph {
                 }
 
                 if (commandType != Command.LIST) { // Every other command mutates the tasks list
-                    storage.save(tasks);
+                    storage.save(tasks.asList());
                 }
 
             } catch (StephException e) {
@@ -65,7 +64,7 @@ public class Steph {
         ui.close();
     }
 
-    private static void handleList(Ui ui, ArrayList<Task> tasks) {
+    private static void handleList(Ui ui, TaskList tasks) {
         StringBuilder message = new StringBuilder("Here are the tasks in your list:");
         for (int i = 0; i < tasks.size(); i++) {
             message.append("\n").append(i + 1).append(".").append(tasks.get(i));
@@ -73,7 +72,7 @@ public class Steph {
         ui.showMessage(message.toString());
     }
 
-    private static void handleMark(Ui ui, ArrayList<Task> tasks, String argument, boolean markAsDone)
+    private static void handleMark(Ui ui, TaskList tasks, String argument, boolean markAsDone)
             throws StephException {
         int taskIndex = parseTaskIndex(argument, tasks.size());
         if (taskIndex == -1) {
@@ -92,7 +91,7 @@ public class Steph {
         }
     }
 
-    private static void handleAddToDo(Ui ui, ArrayList<Task> tasks, String argument) throws StephException {
+    private static void handleAddToDo(Ui ui, TaskList tasks, String argument) throws StephException {
         if (argument.isEmpty()) {
             throw new StephException("Hmm.. I don't understand that.\nPlease type \"todo <task-name>\".");
         }
@@ -104,7 +103,7 @@ public class Steph {
      * task. The "/by" marker is used as the split point since a task name isn't
      * expected to contain it.
      */
-    private static void handleAddDeadline(Ui ui, ArrayList<Task> tasks, String argument) throws StephException {
+    private static void handleAddDeadline(Ui ui, TaskList tasks, String argument) throws StephException {
         int byIndex = argument.indexOf("/by");
         if (byIndex == -1) {
             throw new StephException(
@@ -125,7 +124,7 @@ public class Steph {
      * [HHmm]} and adds an Event task, splitting first on "/from" and then on
      * "/to" within the remainder.
      */
-    private static void handleAddEvent(Ui ui, ArrayList<Task> tasks, String argument) throws StephException {
+    private static void handleAddEvent(Ui ui, TaskList tasks, String argument) throws StephException {
         int fromIndex = argument.indexOf("/from");
         int toIndex = argument.indexOf("/to");
         boolean validOrder = fromIndex != -1 && toIndex != -1 && fromIndex < toIndex;
@@ -162,19 +161,18 @@ public class Steph {
         }
     }
 
-    private static void handleDeleteTask(Ui ui, ArrayList<Task> tasks, String argument) throws StephException {
+    private static void handleDeleteTask(Ui ui, TaskList tasks, String argument) throws StephException {
         int taskIndex = parseTaskIndex(argument, tasks.size());
         if (taskIndex == -1) {
             throw new StephException("Hmm.. I don't understand that.\n"
                     + "Please type \"delete <task-number>\" with a valid task number.");
         }
-        Task deletedTask = tasks.get(taskIndex);
-        tasks.remove(taskIndex);
+        Task deletedTask = tasks.remove(taskIndex);
         ui.showMessage("Okay! I've removed this task:\n  " + deletedTask
                 + "\nNow you have " + tasks.size() + " tasks in the list.");
     }
 
-    private static void addTask(Ui ui, ArrayList<Task> tasks, Task newTask) {
+    private static void addTask(Ui ui, TaskList tasks, Task newTask) {
         tasks.add(newTask);
         ui.showMessage("Got it. I've added this task:\n  " + newTask
                 + "\nNow you have " + tasks.size() + " tasks in the list.");
