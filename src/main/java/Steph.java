@@ -115,9 +115,9 @@ public class Steph {
     }
 
     /**
-     * Parses "<task-name> /by <yyyy-mm-dd> [HHmm]" and adds a Deadline task. The
-     * "/by" marker is used as the split point since a task name isn't expected to
-     * contain it.
+     * Parses {@code <task-name> /by <yyyy-mm-dd> [HHmm]} and adds a Deadline
+     * task. The "/by" marker is used as the split point since a task name isn't
+     * expected to contain it.
      */
     private static void handleAddDeadline(ArrayList<Task> tasks, String argument) throws StephException {
         int byIndex = argument.indexOf("/by");
@@ -136,9 +136,9 @@ public class Steph {
     }
 
     /**
-     * Parses "<task-name> /from <yyyy-mm-dd> [HHmm] /to <yyyy-mm-dd> [HHmm]" and
-     * adds an Event task, splitting first on "/from" and then on "/to" within
-     * the remainder.
+     * Parses {@code <task-name> /from <yyyy-mm-dd> [HHmm] /to <yyyy-mm-dd>
+     * [HHmm]} and adds an Event task, splitting first on "/from" and then on
+     * "/to" within the remainder.
      */
     private static void handleAddEvent(ArrayList<Task> tasks, String argument) throws StephException {
         int fromIndex = argument.indexOf("/from");
