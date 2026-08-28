@@ -49,12 +49,19 @@ def compile_sources(repo_root: Path, build_dir: Path) -> None:
         raise SystemExit(1)
 
 
-def run_session(build_dir: Path, commands: list[str]) -> subprocess.CompletedProcess:
+def run_session(build_dir: Path, commands: list[str], cwd: Path) -> subprocess.CompletedProcess:
+    """Runs one Steph process, feeding `commands` on stdin, with `cwd` as its
+    working directory. Steph persists tasks to a hard-coded relative path
+    ("./data/steph.txt"), so the caller controls `cwd` to keep that file
+    isolated: a fresh directory per test case (so cases don't leak into each
+    other or clobber the repo's real save file), reused across the segments of
+    one case so a "### Restart" can load what an earlier segment saved."""
     stdin = "\n".join(commands) + "\n"
     try:
         return subprocess.run(
             ["java", "-cp", str(build_dir), MAIN_CLASS],
             input=stdin, capture_output=True, text=True, timeout=15,
+            cwd=str(cwd),
         )
     except subprocess.TimeoutExpired:
         raise SystemExit(
@@ -100,11 +107,21 @@ def normalize(text: str) -> str:
 
 TEST_CASE_RE = re.compile(r"^##\s*Test case:\s*(.+?)\s*$", re.MULTILINE)
 AIM_RE = re.compile(r"\*\*Aim:\*\*\s*(.+)")
-PAIR_RE = re.compile(
-    r"###\s*Command\s*\n```\n(.*?)\n```\s*\n"
-    r"###\s*Expected output\s*\n```\n(.*?)\n```",
-    re.DOTALL,
-)
+SECTION_RE = re.compile(r"^###[ \t]*(.+?)[ \t]*$", re.MULTILINE)
+FENCE_RE = re.compile(r"```\n(.*?)\n```", re.DOTALL)
+
+
+def iter_sections(body: str):
+    """Yields (heading, fenced_block_or_None) for each `### ...` section in the
+    order they appear. `fenced_block_or_None` is the first ```-fenced block
+    between this heading and the next `###` (or the end), or None when the
+    section has no fenced block -- e.g. a bare `### Restart` marker."""
+    marks = list(SECTION_RE.finditer(body))
+    for i, m in enumerate(marks):
+        start = m.end()
+        end = marks[i + 1].start() if i + 1 < len(marks) else len(body)
+        fence = FENCE_RE.search(body, start, end)
+        yield m.group(1).strip(), (fence.group(1) if fence else None)
 
 
 def parse_plan(plan_text: str) -> list[dict]:
@@ -116,23 +133,47 @@ def parse_plan(plan_text: str) -> list[dict]:
         aim_match = AIM_RE.search(body)
         aim = aim_match.group(1).strip() if aim_match else "(no **Aim:** line found)"
 
-        commands, expected = [], []
-        for cmd_block, expected_block in PAIR_RE.findall(body):
-            cmd_lines = [l for l in cmd_block.split("\n") if l.strip() != ""]
-            if not cmd_lines:
-                continue
-            if len(cmd_lines) > 1:
-                print(f"warning: test case {title!r} has a Command block with "
-                      f"multiple lines; using only the first: {cmd_lines[0]!r}",
-                      file=sys.stderr)
-            commands.append(cmd_lines[0])
-            expected.append(normalize(expected_block))
+        # Walk the `###` sections in order. A "### Restart" between an Expected
+        # output and the next Command records the index of that next command in
+        # `restart_before`; run_test_case starts a fresh Steph process there.
+        commands, expected, restart_before = [], [], set()
+        pending_command = None
+        restart_pending = False
+
+        for heading, block in iter_sections(body):
+            key = heading.lower()
+            if key == "restart":
+                restart_pending = True
+            elif key == "command":
+                if block is None:
+                    continue
+                cmd_lines = [l for l in block.split("\n") if l.strip() != ""]
+                if not cmd_lines:
+                    continue
+                if len(cmd_lines) > 1:
+                    print(f"warning: test case {title!r} has a Command block with "
+                          f"multiple lines; using only the first: {cmd_lines[0]!r}",
+                          file=sys.stderr)
+                pending_command = cmd_lines[0]
+            elif key == "expected output":
+                if pending_command is None or block is None:
+                    continue
+                if restart_pending:
+                    restart_before.add(len(commands))
+                    restart_pending = False
+                commands.append(pending_command)
+                expected.append(normalize(block))
+                pending_command = None
 
         if not commands:
             print(f"warning: test case {title!r} has no Command/Expected output "
                   "pairs; skipping it", file=sys.stderr)
             continue
-        test_cases.append({"title": title, "aim": aim, "commands": commands, "expected": expected})
+        test_cases.append({
+            "title": title, "aim": aim,
+            "commands": commands, "expected": expected,
+            "restart_before": restart_before,
+        })
     return test_cases
 
 
@@ -143,64 +184,97 @@ def format_wrapped(delimiter: str, body: str) -> str:
 def run_test_case(build_dir: Path, case: dict) -> tuple[bool, list[str]]:
     """Runs one test case. Returns (passed, transcript_lines) -- the
     transcript covers only as much of the session as actually ran, so a
-    failure's transcript stops at the command that failed."""
-    result = run_session(build_dir, case["commands"])
-    blocks = split_into_blocks(result.stdout)
-    delimiter = result.stdout.split("\n", 1)[0] if result.stdout else "____"
+    failure's transcript stops at the command that failed.
 
-    if len(blocks) < 2:
-        print(f"\nFAILED: {case['title']}")
-        print(f"Aim: {case['aim']}")
-        print("The program did not produce the expected startup banner and "
-              "goodbye message. Raw output follows.\n")
-        print("--- stdout ---")
-        print(result.stdout)
-        if result.stderr:
-            print("--- stderr ---")
-            print(result.stderr)
-        return False, []
+    Commands are split into consecutive segments at every `restart_before`
+    index; each segment runs as its own Steph process, and all segments of the
+    case share one working directory. That's what a `### Restart` in the plan
+    exercises: the second process starts with an empty task list in memory but
+    loads whatever the first process saved to ./data/steph.txt."""
+    commands = case["commands"]
+    expected = case["expected"]
+    restart_before = case.get("restart_before", set())
 
-    inner = blocks[1:-1]
-    transcript = []
-    for i, command in enumerate(case["commands"]):
-        transcript.append(f"> {command}")
-        if i >= len(inner):
-            print(f"\nFAILED: {case['title']}")
-            print(f"Aim: {case['aim']}")
-            print(f"Command {i + 1} (\"{command}\") produced no output block -- "
-                  "the program likely exited early (e.g. a \"bye\" command "
-                  "earlier in this test case, or a crash).")
-            if result.stderr:
-                print("--- stderr ---")
-                print(result.stderr)
-            print("\nTranscript up to the failure:")
-            print("\n".join(transcript))
-            return False, transcript
+    boundaries = sorted(b for b in restart_before if 0 < b < len(commands))
+    segment_starts = set(boundaries)  # command indices where a fresh process begins
+    segments, prev = [], 0
+    for b in boundaries + [len(commands)]:
+        segments.append(commands[prev:b])
+        prev = b
 
-        actual = normalize(inner[i])
-        transcript.append(format_wrapped(delimiter, actual))
+    case_cwd = Path(tempfile.mkdtemp(prefix="test-ui-case-"))
+    transcript: list[str] = []
+    try:
+        inner: list[str] = []
+        delimiter = "____"
+        last_stderr = ""
+        for seg_index, seg_commands in enumerate(segments):
+            result = run_session(build_dir, seg_commands, case_cwd)
+            last_stderr = result.stderr
+            if result.stdout:
+                delimiter = result.stdout.split("\n", 1)[0]
+            blocks = split_into_blocks(result.stdout)
+            if len(blocks) < 2:
+                print(f"\nFAILED: {case['title']}")
+                print(f"Aim: {case['aim']}")
+                where = "" if len(segments) == 1 else (
+                    f" (segment {seg_index + 1} of {len(segments)}, "
+                    "the run started by a \"### Restart\")" if seg_index > 0
+                    else f" (segment 1 of {len(segments)})")
+                print("The program did not produce the expected startup banner "
+                      f"and goodbye message{where}. Raw output follows.\n")
+                print("--- stdout ---")
+                print(result.stdout)
+                if result.stderr:
+                    print("--- stderr ---")
+                    print(result.stderr)
+                return False, transcript
+            inner.extend(blocks[1:-1])
 
-        if actual != case["expected"][i]:
-            print(f"\nFAILED: {case['title']}")
-            print(f"Aim: {case['aim']}")
-            print(f"Command: {command}\n")
-            print("--- expected ---")
-            print(case["expected"][i])
-            print("\n--- actual ---")
-            print(actual)
-            diff = difflib.unified_diff(
-                case["expected"][i].splitlines(), actual.splitlines(),
-                fromfile="expected", tofile="actual", lineterm="",
-            )
-            diff_text = "\n".join(diff)
-            if diff_text:
-                print("\n--- diff (expected -> actual) ---")
-                print(diff_text)
-            print("\nTranscript up to the failure:")
-            print("\n".join(transcript))
-            return False, transcript
+        for i, command in enumerate(commands):
+            if i in segment_starts:
+                transcript.append(
+                    "--- restart: fresh Steph process, same ./data/steph.txt ---")
+            transcript.append(f"> {command}")
+            if i >= len(inner):
+                print(f"\nFAILED: {case['title']}")
+                print(f"Aim: {case['aim']}")
+                print(f"Command {i + 1} (\"{command}\") produced no output block -- "
+                      "the program likely exited early (e.g. a \"bye\" command in "
+                      "a Command block, or a crash).")
+                if last_stderr:
+                    print("--- stderr ---")
+                    print(last_stderr)
+                print("\nTranscript up to the failure:")
+                print("\n".join(transcript))
+                return False, transcript
 
-    return True, transcript
+            actual = normalize(inner[i])
+            transcript.append(format_wrapped(delimiter, actual))
+
+            if actual != expected[i]:
+                print(f"\nFAILED: {case['title']}")
+                print(f"Aim: {case['aim']}")
+                print(f"Command: {command}\n")
+                print("--- expected ---")
+                print(expected[i])
+                print("\n--- actual ---")
+                print(actual)
+                diff = difflib.unified_diff(
+                    expected[i].splitlines(), actual.splitlines(),
+                    fromfile="expected", tofile="actual", lineterm="",
+                )
+                diff_text = "\n".join(diff)
+                if diff_text:
+                    print("\n--- diff (expected -> actual) ---")
+                    print(diff_text)
+                print("\nTranscript up to the failure:")
+                print("\n".join(transcript))
+                return False, transcript
+
+        return True, transcript
+    finally:
+        shutil.rmtree(case_cwd, ignore_errors=True)
 
 
 def cmd_run(args: argparse.Namespace) -> None:
@@ -240,35 +314,56 @@ def cmd_run(args: argparse.Namespace) -> None:
 def cmd_record(args: argparse.Namespace) -> None:
     repo_root = find_repo_root(Path(__file__).resolve())
     build_dir = Path(tempfile.mkdtemp(prefix="test-ui-build-"))
+    record_cwd = Path(tempfile.mkdtemp(prefix="test-ui-record-"))
     try:
         compile_sources(repo_root, build_dir)
-        result = run_session(build_dir, args.commands)
-        blocks = split_into_blocks(result.stdout)
-        inner = blocks[1:-1] if len(blocks) >= 2 else []
 
-        if len(inner) != len(args.commands):
-            print(f"warning: expected {len(args.commands)} output blocks, got "
-                  f"{len(inner)}. Raw stdout follows instead of per-command "
-                  "blocks -- check for a crash or an early \"bye\".\n",
-                  file=sys.stderr)
-            print(result.stdout, file=sys.stderr)
-            if result.stderr:
-                print(result.stderr, file=sys.stderr)
-            raise SystemExit(1)
+        # A bare "RESTART" argument (case-insensitive) between commands means:
+        # stop Steph and start a fresh process in the same directory. It prints
+        # a "### Restart" line between the surrounding blocks, so the recorded
+        # output can be pasted straight into a restart test case.
+        segments: list[list[str]] = [[]]
+        for command in args.commands:
+            if command.strip().upper() == "RESTART":
+                segments.append([])
+            else:
+                segments[-1].append(command)
+        segments = [s for s in segments if s]
 
-        for command, block in zip(args.commands, inner):
-            print("### Command")
-            print("```")
-            print(command)
-            print("```")
-            print()
-            print("### Expected output")
-            print("```")
-            print(normalize(block))
-            print("```")
-            print()
+        recorded: list[list[tuple[str, str]]] = []
+        for seg_commands in segments:
+            result = run_session(build_dir, seg_commands, record_cwd)
+            blocks = split_into_blocks(result.stdout)
+            inner = blocks[1:-1] if len(blocks) >= 2 else []
+            if len(inner) != len(seg_commands):
+                print(f"warning: expected {len(seg_commands)} output blocks, got "
+                      f"{len(inner)}. Raw stdout follows instead of per-command "
+                      "blocks -- check for a crash or an early \"bye\".\n",
+                      file=sys.stderr)
+                print(result.stdout, file=sys.stderr)
+                if result.stderr:
+                    print(result.stderr, file=sys.stderr)
+                raise SystemExit(1)
+            recorded.append(list(zip(seg_commands, inner)))
+
+        for seg_index, pairs in enumerate(recorded):
+            if seg_index > 0:
+                print("### Restart")
+                print()
+            for command, block in pairs:
+                print("### Command")
+                print("```")
+                print(command)
+                print("```")
+                print()
+                print("### Expected output")
+                print("```")
+                print(normalize(block))
+                print("```")
+                print()
     finally:
         shutil.rmtree(build_dir, ignore_errors=True)
+        shutil.rmtree(record_cwd, ignore_errors=True)
 
 
 def main() -> None:

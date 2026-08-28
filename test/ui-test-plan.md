@@ -28,12 +28,30 @@ structure of one of those rather than improvising.
 A test case can have as many Command/Expected output pairs as needed. Don't
 put more than one command in a single Command block.
 
+### Restarting the program mid-test-case
+
+To test that tasks are saved to disk and reloaded on startup, put a bare
+`### Restart` heading (no fenced block) between an `### Expected output` and
+the next `### Command`. At that point the runner ends the current Steph
+process and starts a fresh one **in the same working directory**: in-memory
+state is gone, but `./data/steph.txt` is still there, so the new process
+loads whatever the previous commands saved. A test case can restart more
+than once.
+
 Don't hand-type the expected output -- it's easy to get a space or a blank
 line wrong and end up "fixing" a false failure instead of a real one. Instead
 run the commands for real and let the script generate the block:
 
 ```
 python3 .claude/skills/test-ui/scripts/run_ui_tests.py record "todo buy milk" "list"
+```
+
+Pass a bare `RESTART` argument where you want a restart -- the recorder runs
+the commands before it and after it as separate processes sharing one data
+file, and prints a `### Restart` line between the blocks:
+
+```
+python3 .claude/skills/test-ui/scripts/run_ui_tests.py record "todo buy milk" RESTART "list"
 ```
 
 then read over the printed output to confirm it's actually correct (the
@@ -258,4 +276,100 @@ foo bar
 ### Expected output
 ```
 Hmm.. I don't understand that command: "foo".
+```
+
+## Test case: Tasks are saved and reloaded across restarts
+
+**Aim:** The task list is written to `./data/steph.txt` after every change and
+read back when Steph starts, so a task added in one session is still there in
+the next. Checks all three task types round-trip, that a task's done status
+(`mark`) is preserved, and that a change made after a restart (`delete`) is
+itself saved for the following restart.
+
+### Command
+```
+todo read book
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [T][ ] read book
+Now you have 1 tasks in the list.
+```
+
+### Command
+```
+deadline return book /by Sunday
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [D][ ] return book (by: Sunday)
+Now you have 2 tasks in the list.
+```
+
+### Command
+```
+event project meeting /from Mon 2pm /to 4pm
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [E][ ] project meeting (from: Mon 2pm to: 4pm)
+Now you have 3 tasks in the list.
+```
+
+### Command
+```
+mark 2
+```
+
+### Expected output
+```
+Awesome! I've marked this task as done:
+  [D][X] return book (by: Sunday)
+```
+
+### Restart
+
+### Command
+```
+list
+```
+
+### Expected output
+```
+Here are the tasks in your list:
+1.[T][ ] read book
+2.[D][X] return book (by: Sunday)
+3.[E][ ] project meeting (from: Mon 2pm to: 4pm)
+```
+
+### Command
+```
+delete 1
+```
+
+### Expected output
+```
+Okay! I've removed this task:
+  [T][ ] read book
+Now you have 2 tasks in the list.
+```
+
+### Restart
+
+### Command
+```
+list
+```
+
+### Expected output
+```
+Here are the tasks in your list:
+1.[D][X] return book (by: Sunday)
+2.[E][ ] project meeting (from: Mon 2pm to: 4pm)
 ```
