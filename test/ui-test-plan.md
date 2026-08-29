@@ -480,3 +480,95 @@ list
 Here are the tasks in your list:
 1.[D][ ] return book (by: Oct 15 2019, 6:00pm)
 ```
+
+## Test case: Find tasks by keyword
+
+**Aim:** `find <keyword>` lists every task whose name contains the keyword,
+re-numbered from 1, and matches regardless of letter case. A keyword that
+matches nothing reports a "couldn't find" message rather than an empty list.
+
+### Command
+```
+todo read book
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [T][ ] read book
+Now you have 1 tasks in the list.
+```
+
+### Command
+```
+deadline return book /by 2019-10-15
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [D][ ] return book (by: Oct 15 2019)
+Now you have 2 tasks in the list.
+```
+
+### Command
+```
+todo buy milk
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [T][ ] buy milk
+Now you have 3 tasks in the list.
+```
+
+### Command
+```
+find book
+```
+
+### Expected output
+```
+Here are the matching tasks in your list:
+1.[T][ ] read book
+2.[D][ ] return book (by: Oct 15 2019)
+```
+
+### Command
+```
+find BOOK
+```
+
+### Expected output
+```
+Here are the matching tasks in your list:
+1.[T][ ] read book
+2.[D][ ] return book (by: Oct 15 2019)
+```
+
+### Command
+```
+find umbrella
+```
+
+### Expected output
+```
+I couldn't find any tasks matching "umbrella".
+```
+
+## Test case: Find with no keyword is rejected
+
+**Aim:** `find` on its own has no keyword to search for -- without a check it
+would "match" every task -- so it reports a usage error instead.
+
+### Command
+```
+find
+```
+
+### Expected output
+```
+Hmm.. I don't understand that.
+Please type "find <keyword>".
+```

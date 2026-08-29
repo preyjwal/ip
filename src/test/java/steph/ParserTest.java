@@ -169,6 +169,27 @@ public class ParserTest {
     }
 
     // ====================================================================
+    // parseFind
+    // ====================================================================
+
+    @Test
+    public void parseFind_nonEmptyKeyword_returnsKeyword() throws StephException {
+        assertEquals("book", Parser.parseFind("book"));
+    }
+
+    @Test
+    public void parseFind_multiWordKeyword_returnedUnchanged() throws StephException {
+        // The whole remaining text is the search phrase, spaces included.
+        assertEquals("read book", Parser.parseFind("read book"));
+    }
+
+    @Test
+    public void parseFind_emptyKeyword_exceptionThrown() {
+        // "find" on its own would otherwise match every task.
+        assertThrows(StephException.class, () -> Parser.parseFind(""));
+    }
+
+    // ====================================================================
     // parseToDo
     // ====================================================================
 

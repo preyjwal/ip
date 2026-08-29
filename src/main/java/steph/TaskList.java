@@ -79,4 +79,21 @@ public class TaskList {
     public List<Task> asList() {
         return Collections.unmodifiableList(this.tasks);
     }
+
+    /**
+     * Returns the tasks whose name contains {@code keyword}, matched
+     * case-insensitively and kept in their current order.
+     *
+     * <p>The result is a fresh snapshot: it is unmodifiable, and later changes
+     * to this list are not reflected in it. An empty list means nothing matched.
+     *
+     * @param keyword the text to look for within each task's name
+     * @return the matching tasks, in list order
+     */
+    public List<Task> findMatch(String keyword) {
+        String loweredKeyword = keyword.toLowerCase();
+        return this.tasks.stream()
+                .filter(task -> task.getName().toLowerCase().contains(loweredKeyword))
+                .toList();
+    }
 }

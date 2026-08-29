@@ -70,6 +70,21 @@ public class Parser {
     }
 
     /**
+     * Returns the keyword a "find" command should search task names for.
+     *
+     * @param arguments the text after the "find" keyword
+     * @return the keyword, with surrounding whitespace already removed by
+     *         {@link #parseArguments}
+     * @throws StephException if no keyword was given
+     */
+    public static String parseFind(String arguments) throws StephException {
+        if (arguments.isEmpty()) {
+            throw new StephException("Hmm.. I don't understand that.\nPlease type \"find <keyword>\".");
+        }
+        return arguments;
+    }
+
+    /**
      * Builds a ToDo from its arguments.
      *
      * @param arguments The task name.

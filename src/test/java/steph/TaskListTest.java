@@ -3,6 +3,7 @@ package steph;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,11 +17,13 @@ import steph.task.ToDo;
  * Unit tests for {@link TaskList}.
  *
  * <p>Most of {@code TaskList} is a thin pass-through to an {@code ArrayList},
- * but two behaviours are deliberate design decisions worth pinning down:
+ * but a few behaviours are deliberate design decisions worth pinning down:
  * <ul>
  *   <li>the {@code List}-taking constructor makes a <em>defensive copy</em>, so
  *       the caller's list and the {@code TaskList} cannot disturb each other;</li>
- *   <li>{@link TaskList#asList()} hands back an <em>unmodifiable</em> view.</li>
+ *   <li>{@link TaskList#asList()} hands back an <em>unmodifiable</em> view;</li>
+ *   <li>{@link TaskList#findMatch(String)} does a case-insensitive substring
+ *       search and returns an unmodifiable <em>snapshot</em>.</li>
  * </ul>
  */
 public class TaskListTest {
@@ -104,5 +107,59 @@ public class TaskListTest {
         list.add(new ToDo("added after asList() was called"));
 
         assertEquals(1, view.size());
+    }
+
+    // ====================================================================
+    // findMatch
+    //
+    // Contract: returns the tasks whose name contains the keyword
+    // (case-insensitive substring), in list order, as an unmodifiable
+    // snapshot.
+    // ====================================================================
+
+    @Test
+    public void findMatch_keywordInSomeNames_returnsOnlyThoseInOrder() {
+        Task read = new ToDo("read book");
+        Task returnBook = new ToDo("return book");
+        Task buy = new ToDo("buy milk");
+        TaskList list = new TaskList(List.of(read, returnBook, buy));
+
+        List<Task> matches = list.findMatch("book");
+
+        assertEquals(List.of(read, returnBook), matches);
+    }
+
+    @Test
+    public void findMatch_differentCase_stillMatches() {
+        Task task = new ToDo("Read Book");
+        TaskList list = new TaskList(List.of(task));
+
+        assertEquals(List.of(task), list.findMatch("book"));
+    }
+
+    @Test
+    public void findMatch_noNameContainsKeyword_returnsEmptyList() {
+        TaskList list = new TaskList(List.of(new ToDo("buy milk")));
+
+        assertTrue(list.findMatch("book").isEmpty());
+    }
+
+    @Test
+    public void findMatch_result_isUnmodifiable() {
+        TaskList list = new TaskList(List.of(new ToDo("read book")));
+
+        List<Task> matches = list.findMatch("book");
+
+        assertThrows(UnsupportedOperationException.class, () -> matches.add(new ToDo("x")));
+    }
+
+    @Test
+    public void findMatch_result_isASnapshotNotALiveView() {
+        TaskList list = new TaskList(List.of(new ToDo("read book")));
+
+        List<Task> matches = list.findMatch("book");
+        list.add(new ToDo("borrow book"));
+
+        assertEquals(1, matches.size());
     }
 }
