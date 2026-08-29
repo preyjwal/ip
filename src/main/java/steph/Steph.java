@@ -1,6 +1,7 @@
 package steph;
 
 import java.io.IOException;
+import java.util.List;
 
 import steph.task.Task;
 
@@ -64,9 +65,13 @@ public class Steph {
                 case DEADLINE -> addTask(Parser.parseDeadline(argument));
                 case EVENT -> addTask(Parser.parseEvent(argument));
                 case DELETE -> handleDeleteTask(argument);
+                case FIND -> handleFindTask(Parser.parseFind(argument));
                 }
 
-                if (commandType != Command.LIST) { // Every other command mutates the tasks list
+                // "list" and "find" only read the task list; every other command
+                // changes it, so only those need the file rewritten.
+                boolean isReadOnlyCommand = commandType == Command.LIST || commandType == Command.FIND;
+                if (!isReadOnlyCommand) {
                     storage.save(tasks.asList());
                 }
 
@@ -86,11 +91,7 @@ public class Steph {
     }
 
     private void handleList() {
-        StringBuilder message = new StringBuilder("Here are the tasks in your list:");
-        for (int i = 0; i < tasks.size(); i++) {
-            message.append("\n").append(i + 1).append(".").append(tasks.get(i));
-        }
-        ui.showMessage(message.toString());
+        ui.showMessage(numberedList("Here are the tasks in your list:", tasks.asList()));
     }
 
     private void handleMark(String argument, boolean markAsDone) throws StephException {
@@ -112,6 +113,32 @@ public class Steph {
         Task deletedTask = tasks.remove(taskIndex);
         ui.showMessage("Okay! I've removed this task:\n  " + deletedTask
                 + "\nNow you have " + tasks.size() + " tasks in the list.");
+    }
+
+    private void handleFindTask(String keyword) {
+        List<Task> matched = tasks.findMatch(keyword);
+        if (matched.isEmpty()) {
+            ui.showMessage("I couldn't find any tasks matching \"" + keyword + "\".");
+            return;
+        }
+        ui.showMessage(numberedList("Here are the matching tasks in your list:", matched));
+    }
+
+    /**
+     * Builds a display block with {@code header} on the first line, then every
+     * task on its own line numbered from 1 -- the format both "list" and "find"
+     * print.
+     *
+     * @param header the first line, describing what the list is
+     * @param items  the tasks to number, in the order given
+     * @return the assembled multi-line string
+     */
+    private static String numberedList(String header, List<Task> items) {
+        StringBuilder message = new StringBuilder(header);
+        for (int i = 0; i < items.size(); i++) {
+            message.append("\n").append(i + 1).append(".").append(items.get(i));
+        }
+        return message.toString();
     }
 
     private void addTask(Task newTask) {
