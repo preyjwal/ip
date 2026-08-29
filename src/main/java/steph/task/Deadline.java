@@ -9,7 +9,7 @@ import steph.DateTimes;
  */
 public class Deadline extends Task {
 
-    protected LocalDateTime by;
+    private final LocalDateTime by;
 
     public Deadline(String name, LocalDateTime by) {
         super(name);

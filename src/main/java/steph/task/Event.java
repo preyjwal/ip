@@ -9,8 +9,8 @@ import steph.DateTimes;
  */
 public class Event extends Task {
 
-    protected LocalDateTime from;
-    protected LocalDateTime to;
+    private final LocalDateTime from;
+    private final LocalDateTime to;
 
     public Event(String name, LocalDateTime from, LocalDateTime to) {
         super(name);

@@ -14,7 +14,10 @@ import java.time.format.DateTimeParseException;
  */
 public final class DateTimes {
 
-    /** User input format for the optional time part: an ISO date, a space, then a 24-hour "HHmm", e.g. "2019-10-15 1800". */
+    /**
+     * User input format for the optional time part: an ISO date, a space, then
+     * a 24-hour "HHmm", e.g. "2019-10-15 1800".
+     */
     private static final DateTimeFormatter INPUT_WITH_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm");
 
     /** Display format when a time is present, e.g. "Oct 15 2019, 6:00PM". */

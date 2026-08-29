@@ -13,13 +13,33 @@ import steph.task.Event;
 import steph.task.Task;
 import steph.task.ToDo;
 
+/**
+ * Reads the task list from a save file on disk and writes it back after every
+ * change. Storage owns the on-disk format: {@link #save} turns tasks into
+ * lines via {@link Task#toFileFormat()}, and {@link #load} / {@link #parseTask}
+ * turn those lines back into tasks. Corrupted lines are skipped rather than
+ * aborting the load.
+ */
 public class Storage {
     private final Path path;
 
+    /**
+     * Creates a Storage bound to one save-file location.
+     *
+     * @param filePath path the task list is read from and written to
+     */
     public Storage(String filePath) {
         this.path = Paths.get(filePath);
     }
 
+    /**
+     * Reads the save file and returns the tasks it holds, in file order. A
+     * missing file is treated as an empty list; a line that cannot be parsed
+     * is reported and skipped so the rest of the file still loads.
+     *
+     * @return the tasks read from the file, or an empty list if there is no file
+     * @throws IOException if the file exists but cannot be read
+     */
     public ArrayList<Task> load() throws IOException {
         if (!Files.exists(this.path)) {
             return new ArrayList<>();
