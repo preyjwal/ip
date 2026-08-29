@@ -1,6 +1,10 @@
+package steph;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import steph.task.Task;
 
 /**
  * The list of tasks Steph is tracking, together with the operations the

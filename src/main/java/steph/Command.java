@@ -1,3 +1,5 @@
+package steph;
+
 /**
  * The fixed set of command keywords Steph understands. Each constant carries
  * the exact keyword text (e.g. "todo") a user command must start with, so

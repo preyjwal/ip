@@ -1,3 +1,5 @@
+package steph;
+
 /**
  * Thrown when a user command can't be understood or acted on (e.g. a missing
  * "/by" marker, an out-of-range task number). The message is written to be

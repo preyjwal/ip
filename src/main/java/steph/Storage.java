@@ -1,3 +1,5 @@
+package steph;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -5,6 +7,11 @@ import java.nio.file.Paths;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+
+import steph.task.Deadline;
+import steph.task.Event;
+import steph.task.Task;
+import steph.task.ToDo;
 
 public class Storage {
     private final Path path;

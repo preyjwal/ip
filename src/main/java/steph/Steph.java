@@ -1,4 +1,8 @@
+package steph;
+
 import java.io.IOException;
+
+import steph.task.Task;
 
 /**
  * Entry point and top-level coordinator. A Steph owns the three collaborators

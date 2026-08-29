@@ -1,3 +1,5 @@
+package steph;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -6,8 +8,8 @@ import java.time.format.DateTimeParseException;
 
 /**
  * Helpers for reading and displaying the date-and-time values attached to
- * {@link Deadline} and {@link Event} tasks. Kept in one place so the command
- * parser ({@link Steph}), the save-file parser ({@link Storage}), and the task
+ * Deadline and Event tasks. Kept in one place so the command parser
+ * ({@link Parser}), the save-file reader ({@link Storage}), and the task
  * classes all agree on how a date-time is written and shown.
  */
 public final class DateTimes {
@@ -68,7 +70,7 @@ public final class DateTimes {
      * @param dateTime the value to write
      * @return the ISO-8601 text
      */
-    static String toStorageFormat(LocalDateTime dateTime) {
+    public static String toStorageFormat(LocalDateTime dateTime) {
         return dateTime.toString();
     }
 
@@ -79,7 +81,7 @@ public final class DateTimes {
      * @param dateTime the value to show
      * @return e.g. "Oct 15 2019" or "Oct 15 2019, 6:00PM"
      */
-    static String toDisplayFormat(LocalDateTime dateTime) {
+    public static String toDisplayFormat(LocalDateTime dateTime) {
         if (dateTime.toLocalTime().equals(LocalTime.MIDNIGHT)) {
             return dateTime.format(DISPLAY_DATE_ONLY);
         }

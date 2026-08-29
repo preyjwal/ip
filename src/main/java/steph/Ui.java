@@ -1,3 +1,5 @@
+package steph;
+
 import java.util.Scanner;
 
 /**

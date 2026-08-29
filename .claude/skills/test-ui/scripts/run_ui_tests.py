@@ -25,7 +25,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-MAIN_CLASS = "Steph"
+MAIN_CLASS = "steph.Steph"
 
 
 def find_repo_root(start: Path) -> Path:
@@ -36,7 +36,7 @@ def find_repo_root(start: Path) -> Path:
 
 
 def compile_sources(repo_root: Path, build_dir: Path) -> None:
-    java_files = sorted((repo_root / "src" / "main" / "java").glob("*.java"))
+    java_files = sorted((repo_root / "src" / "main" / "java").rglob("*.java"))
     if not java_files:
         raise SystemExit(f"error: no .java files found under {repo_root / 'src' / 'main' / 'java'}")
     result = subprocess.run(

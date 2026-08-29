@@ -1,5 +1,11 @@
+package steph;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+
+import steph.task.Deadline;
+import steph.task.Event;
+import steph.task.ToDo;
 
 /**
  * Turns a raw line of user input into values the command loop can act on: the

@@ -1,3 +1,5 @@
+package steph.task;
+
 /**
  * A task with a name and a done/not-done status. Concrete task types
  * (ToDo, Deadline, Event) extend this class.
