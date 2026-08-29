@@ -22,11 +22,19 @@ public class Deadline extends Task {
         this.by = by;
     }
 
+    /**
+     * Returns the full save-file line for this deadline, e.g.
+     * {@code "D | 0 | return book | 2019-10-15T18:00"}.
+     */
     @Override
     public String toFileFormat() {
         return "D" + super.toFileFormat() + " | " + DateTimes.toStorageFormat(this.by);
     }
 
+    /**
+     * Returns this deadline as
+     * {@code "[D][ ] return book (by: Oct 15 2019)"}.
+     */
     @Override
     public String toString() {
         return "[D]" + super.toString() + " (by: " + DateTimes.toDisplayFormat(this.by) + ")";

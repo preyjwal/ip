@@ -45,6 +45,10 @@ public abstract class Task {
         return " | " + (isDone ? "1" : "0") + " | " + this.name;
     }
 
+    /**
+     * Returns this task as {@code "[X] name"} when done, or {@code "[ ] name"}
+     * when not. Subclasses prepend their type tag, e.g. {@code "[T]"}.
+     */
     @Override
     public String toString() {
         if (this.isDone) {

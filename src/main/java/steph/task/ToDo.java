@@ -14,11 +14,16 @@ public class ToDo extends Task {
         super(name);
     }
 
+    /**
+     * Returns the full save-file line for this to-do, e.g.
+     * {@code "T | 0 | read book"}.
+     */
     @Override
     public String toFileFormat() {
         return "T" + super.toFileFormat();
     }
 
+    /** Returns this to-do as {@code "[T][ ] name"} (or {@code "[X]"} when done). */
     @Override
     public String toString() {
         return "[T]" + super.toString();

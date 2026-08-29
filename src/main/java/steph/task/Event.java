@@ -25,6 +25,10 @@ public class Event extends Task {
         this.to = to;
     }
 
+    /**
+     * Returns the full save-file line for this event, e.g.
+     * {@code "E | 0 | camp | 2019-10-15T00:00 | 2019-10-16T00:00"}.
+     */
     @Override
     public String toFileFormat() {
         return "E" + super.toFileFormat()
@@ -32,6 +36,10 @@ public class Event extends Task {
                 + " | " + DateTimes.toStorageFormat(this.to);
     }
 
+    /**
+     * Returns this event as
+     * {@code "[E][ ] camp (from: Oct 15 2019 to: Oct 16 2019)"}.
+     */
     @Override
     public String toString() {
         return "[E]" + super.toString()

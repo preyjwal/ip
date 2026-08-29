@@ -35,9 +35,7 @@ public class TaskList {
         this.tasks = new ArrayList<>(initialTasks);
     }
 
-    /**
-     * @return the number of tasks in the list
-     */
+    /** Returns the number of tasks in the list. */
     public int size() {
         return this.tasks.size();
     }
