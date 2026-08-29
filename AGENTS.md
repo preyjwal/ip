@@ -30,12 +30,23 @@ Ensure that Java 25 is used when running the application or build tasks. On macO
 
 ## Testing
 
+Steph has two test layers: the console `test/ui-test-plan.md` (run by the `test-ui` skill) and the JUnit tests under `src/test/java` (run by `./gradlew test`).
+
 After every code update (any change under `src/main/java`), before treating the task as done:
 
 1. Update `test/ui-test-plan.md` if the change affects console output or adds/changes a command — add new test cases for new behavior, and update expected output for existing cases whose output legitimately changed. Generate expected-output blocks from a real run (the `test-ui` skill's `record` mode) rather than hand-typing them.
 2. Invoke the `test-ui` skill to run the test plan and confirm it passes.
+3. Update the JUnit tests to keep the coverage target below satisfied: add or adjust cases for any high-value logic the change adds or reshapes, add a test class for any new class that carries such logic, and remove tests for deleted code. Run `./gradlew test` and confirm it passes.
 
-If the test plan fails, treat that as a signal to investigate before proceeding — either the change introduced a regression, or the expected output is stale and needs a deliberate update. Don't edit the test plan to match broken output just to make it pass.
+If either layer fails, treat that as a signal to investigate before proceeding — either the change introduced a regression, or the expected values are stale and need a deliberate update. Don't edit a test to match broken output just to make it pass.
+
+### JUnit coverage target
+
+Keep focused JUnit tests on roughly the **top 50% highest-value methods** — those with real branching, those core to how the program behaves, and those that would be costly if they broke. At present that means `Parser`, `DateTimes`, `Storage`, and the deliberate `TaskList` contracts (defensive-copy constructor, unmodifiable `asList()` view). Thin one-line delegates, trivial getters, and the `System.in` / `System.out` code in `Ui` and `Steph` are left to the `test-ui` plan and do not need JUnit tests.
+
+This target is a standing requirement, not a one-time task: every change under `src/main/java` must leave the JUnit suite back in compliance with it. If a change adds high-value logic without matching tests, or leaves existing tests asserting the old behavior, the task is not done. Include the test changes in the same commit as the code change.
+
+Follow standard Gradle/JUnit layout and naming: test for `steph.Foo` goes in `src/test/java/steph/FooTest.java`, in package `steph`. When a test method name would get unwieldy, use `featureUnderTest_scenario_expectedBehavior()` (e.g. `parseTaskIndex_zero_exceptionThrown()`).
 
 ## Git
 
