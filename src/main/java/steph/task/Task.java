@@ -8,6 +8,11 @@ public abstract class Task {
     private String name;
     private boolean isDone;
 
+    /**
+     * Constructs a task with the given name, initially not done.
+     *
+     * @param name Description of the task.
+     */
     public Task(String name) {
         this.name = name;
         this.isDone = false;
@@ -21,10 +26,12 @@ public abstract class Task {
         return this.name;
     }
 
+    /** Marks this task as done. */
     public void complete() {
         this.isDone = true;
     }
 
+    /** Marks this task as not done. */
     public void uncomplete() {
         this.isDone = false;
     }

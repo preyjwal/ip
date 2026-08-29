@@ -81,6 +81,11 @@ public class Steph {
         ui.close();
     }
 
+    /**
+     * Launches Steph, using {@code ./data/steph.txt} as the save file.
+     *
+     * @param args Command-line arguments (unused).
+     */
     public static void main(String[] args) {
         new Steph("./data/steph.txt").run();
     }
