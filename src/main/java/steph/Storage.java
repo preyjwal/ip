@@ -61,8 +61,8 @@ public class Storage {
      * If there is no file at that filepath, it creates a new file and writes to it.
      * Called after every change and overwrites the whole file.
      *
-     * @param tasks the tasks to write, in order
-     * @throws IOException If an I/O error occurs
+     * @param tasks The tasks to write, in order.
+     * @throws IOException If an I/O error occurs.
      */
     public void save(List<Task> tasks) throws IOException {
         Files.createDirectories(this.path.getParent());

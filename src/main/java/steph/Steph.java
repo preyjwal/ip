@@ -20,7 +20,7 @@ public class Steph {
     /**
      * Sets up the collaborators and loads any previously saved tasks.
      *
-     * @param filePath where the task list is read from and written to
+     * @param filePath Where the task list is read from and written to.
      */
     public Steph(String filePath) {
         ui = new Ui();

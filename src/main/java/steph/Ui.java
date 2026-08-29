@@ -54,7 +54,7 @@ public class Ui {
      * once input runs out (e.g. the end of a piped file), which ends the
      * command loop.
      *
-     * @return true while a further command line is available
+     * @return True while a further command line is available.
      */
     public boolean hasNextCommand() {
         return this.scanner.hasNextLine();
@@ -64,7 +64,7 @@ public class Ui {
      * Reads the next line of input, with leading and trailing whitespace
      * removed.
      *
-     * @return the command line as typed, trimmed
+     * @return The command line as typed, trimmed.
      */
     public String readCommand() {
         return this.scanner.nextLine().trim();
@@ -74,7 +74,7 @@ public class Ui {
      * Prints a response framed by a horizontal rule above and below. The
      * message may contain newlines; every line appears inside the same frame.
      *
-     * @param message the text to show
+     * @param message The text to show.
      */
     public void showMessage(String message) {
         System.out.println(LINE);
@@ -86,7 +86,7 @@ public class Ui {
      * Prints an error in the same frame as any other response, so a failed
      * command reads consistently with a successful one.
      *
-     * @param message the error text to show
+     * @param message The error text to show.
      */
     public void showError(String message) {
         showMessage(message);

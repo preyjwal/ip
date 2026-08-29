@@ -32,9 +32,9 @@ public final class DateTimes {
      * Accepts "yyyy-mm-dd" or "yyyy-mm-dd HHmm"; when only a date is given the
      * time defaults to midnight (00:00).
      *
-     * @param text the date (and optional time) as typed by the user
-     * @return the parsed date-time
-     * @throws DateTimeParseException if the text matches neither accepted format
+     * @param text The date (and optional time) as typed by the user.
+     * @return The parsed date-time.
+     * @throws DateTimeParseException If the text matches neither accepted format.
      */
     static LocalDateTime parseUserInput(String text) throws DateTimeParseException {
         try {
@@ -50,9 +50,9 @@ public final class DateTimes {
      * ISO {@code LocalDateTime} form ("2019-10-15T18:00") and a plain ISO
      * date ("2019-10-15").
      *
-     * @param text one date-time field from a save-file line
-     * @return the parsed date-time
-     * @throws DateTimeParseException if the text is neither form
+     * @param text One date-time field from a save-file line.
+     * @return The parsed date-time.
+     * @throws DateTimeParseException If the text is neither form.
      */
     static LocalDateTime parseStored(String text) throws DateTimeParseException {
         try {
@@ -67,8 +67,8 @@ public final class DateTimes {
      * ISO-8601 ("2019-10-15T18:00"), which {@link #parseStored} reads back
      * without a formatter, so the file stays round-trippable.
      *
-     * @param dateTime the value to write
-     * @return the ISO-8601 text
+     * @param dateTime The value to write.
+     * @return The ISO-8601 text.
      */
     public static String toStorageFormat(LocalDateTime dateTime) {
         return dateTime.toString();
@@ -78,8 +78,8 @@ public final class DateTimes {
      * Formats a date-time for display, omitting the time when it is midnight
      * (which is what a date-only command produces).
      *
-     * @param dateTime the value to show
-     * @return e.g. "Oct 15 2019" or "Oct 15 2019, 6:00PM"
+     * @param dateTime The value to show.
+     * @return The display text, e.g. "Oct 15 2019" or "Oct 15 2019, 6:00PM".
      */
     public static String toDisplayFormat(LocalDateTime dateTime) {
         if (dateTime.toLocalTime().equals(LocalTime.MIDNIGHT)) {
