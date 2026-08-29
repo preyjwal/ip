@@ -7,6 +7,13 @@ package steph;
  * rather than a technical error description.
  */
 public class StephException extends Exception {
+
+    /**
+     * Constructs a StephException carrying a message meant to be shown to the
+     * user as-is.
+     *
+     * @param message User-facing explanation of what went wrong.
+     */
     public StephException(String message) {
         super(message);
     }

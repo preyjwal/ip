@@ -20,7 +20,7 @@ public class Steph {
     /**
      * Sets up the collaborators and loads any previously saved tasks.
      *
-     * @param filePath where the task list is read from and written to
+     * @param filePath Where the task list is read from and written to.
      */
     public Steph(String filePath) {
         ui = new Ui();
@@ -81,6 +81,11 @@ public class Steph {
         ui.close();
     }
 
+    /**
+     * Launches Steph, using {@code ./data/steph.txt} as the save file.
+     *
+     * @param args Command-line arguments (unused).
+     */
     public static void main(String[] args) {
         new Steph("./data/steph.txt").run();
     }

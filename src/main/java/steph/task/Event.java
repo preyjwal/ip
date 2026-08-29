@@ -12,12 +12,23 @@ public class Event extends Task {
     protected LocalDateTime from;
     protected LocalDateTime to;
 
+    /**
+     * Constructs an event with the given name and start and end date-times.
+     *
+     * @param name Description of the task.
+     * @param from Start date-time of the event.
+     * @param to   End date-time of the event.
+     */
     public Event(String name, LocalDateTime from, LocalDateTime to) {
         super(name);
         this.from = from;
         this.to = to;
     }
 
+    /**
+     * Returns the full save-file line for this event, e.g.
+     * {@code "E | 0 | camp | 2019-10-15T00:00 | 2019-10-16T00:00"}.
+     */
     @Override
     public String toFileFormat() {
         return "E" + super.toFileFormat()
@@ -25,6 +36,10 @@ public class Event extends Task {
                 + " | " + DateTimes.toStorageFormat(this.to);
     }
 
+    /**
+     * Returns this event as
+     * {@code "[E][ ] camp (from: Oct 15 2019 to: Oct 16 2019)"}.
+     */
     @Override
     public String toString() {
         return "[E]" + super.toString()

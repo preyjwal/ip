@@ -21,9 +21,9 @@ public class Parser {
     /**
      * Identifies which command a line names, from its first word.
      *
-     * @param fullCommand the whole line as typed
-     * @return the matching Command
-     * @throws StephException if the first word is not a known command keyword
+     * @param fullCommand The whole line as typed.
+     * @return The matching command.
+     * @throws StephException If the first word is not a known command keyword.
      */
     public static Command parseCommand(String fullCommand) throws StephException {
         String keyword = fullCommand.split(" ", 2)[0];
@@ -38,8 +38,8 @@ public class Parser {
      * Returns the part of the line after the command keyword, trimmed. Empty
      * when the line is only the keyword.
      *
-     * @param fullCommand the whole line as typed
-     * @return the argument text
+     * @param fullCommand The whole line as typed.
+     * @return The argument text.
      */
     public static String parseArguments(String fullCommand) {
         String[] parts = fullCommand.split(" ", 2);
@@ -50,11 +50,11 @@ public class Parser {
      * Parses the task number for a mark / unmark / delete command and converts
      * it to a 0-based index into a list of {@code taskCount} tasks.
      *
-     * @param arguments   the text after the command keyword
-     * @param taskCount   how many tasks currently exist, for the range check
-     * @param commandWord the keyword to quote back in the error message
-     * @return the 0-based index the number refers to
-     * @throws StephException if the text is missing, not a number, or out of range
+     * @param arguments   The text after the command keyword.
+     * @param taskCount   How many tasks currently exist, for the range check.
+     * @param commandWord The keyword to quote back in the error message.
+     * @return The 0-based index the number refers to.
+     * @throws StephException If the text is missing, not a number, or out of range.
      */
     public static int parseTaskIndex(String arguments, int taskCount, String commandWord) throws StephException {
         try {
@@ -72,9 +72,9 @@ public class Parser {
     /**
      * Builds a ToDo from its arguments.
      *
-     * @param arguments the task name
-     * @return the new ToDo
-     * @throws StephException if the name is empty
+     * @param arguments The task name.
+     * @return The new ToDo.
+     * @throws StephException If the name is empty.
      */
     public static ToDo parseToDo(String arguments) throws StephException {
         if (arguments.isEmpty()) {
@@ -88,10 +88,10 @@ public class Parser {
      * "/by" marker is used as the split point since a task name isn't expected
      * to contain it.
      *
-     * @param arguments the text after the "deadline" keyword
-     * @return the new Deadline
-     * @throws StephException if "/by" is missing, either side is empty, or the
-     *                        date cannot be read
+     * @param arguments The text after the "deadline" keyword.
+     * @return The new Deadline.
+     * @throws StephException If "/by" is missing, either side is empty, or the
+     *                        date cannot be read.
      */
     public static Deadline parseDeadline(String arguments) throws StephException {
         int byIndex = arguments.indexOf("/by");
@@ -114,10 +114,10 @@ public class Parser {
      * {@code <task-name> /from <yyyy-mm-dd> [HHmm] /to <yyyy-mm-dd> [HHmm]},
      * splitting first on "/from" and then on "/to" within the remainder.
      *
-     * @param arguments the text after the "event" keyword
-     * @return the new Event
-     * @throws StephException if the markers are missing or out of order, any
-     *                        part is empty, or a date cannot be read
+     * @param arguments The text after the "event" keyword.
+     * @return The new Event.
+     * @throws StephException If the markers are missing or out of order, any
+     *                        part is empty, or a date cannot be read.
      */
     public static Event parseEvent(String arguments) throws StephException {
         int fromIndex = arguments.indexOf("/from");
@@ -145,9 +145,9 @@ public class Parser {
      * or "yyyy-mm-dd HHmm", e.g. 2019-10-15 1800). A date with no time is taken
      * as midnight.
      *
-     * @param text the date (and optional time) as typed
-     * @return the parsed date-time
-     * @throws StephException with a readable hint if the text is not a valid date
+     * @param text The date (and optional time) as typed.
+     * @return The parsed date-time.
+     * @throws StephException With a readable hint if the text is not a valid date.
      */
     private static LocalDateTime parseDateTime(String text) throws StephException {
         try {
