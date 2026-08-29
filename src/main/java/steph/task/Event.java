@@ -9,8 +9,8 @@ import steph.DateTimes;
  */
 public class Event extends Task {
 
-    protected LocalDateTime from;
-    protected LocalDateTime to;
+    private final LocalDateTime from;
+    private final LocalDateTime to;
 
     /**
      * Constructs an event with the given name and start and end date-times.

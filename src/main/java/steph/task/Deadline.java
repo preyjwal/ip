@@ -9,7 +9,7 @@ import steph.DateTimes;
  */
 public class Deadline extends Task {
 
-    protected LocalDateTime by;
+    private final LocalDateTime by;
 
     /**
      * Constructs a deadline with the given name and due date-time.

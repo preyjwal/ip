@@ -5,7 +5,7 @@ package steph.task;
  * (ToDo, Deadline, Event) extend this class.
  */
 public abstract class Task {
-    private String name;
+    private final String name;
     private boolean isDone;
 
     /**
