@@ -8,15 +8,25 @@ import steph.task.Task;
 /**
  * Entry point and top-level coordinator. A Steph owns the three collaborators
  * it needs -- a {@link Ui} for talking to the user, a {@link Storage} for the
- * save file, and a {@link TaskList} for the tasks -- and its {@link #run()}
- * method is the read-parse-act loop that ties them together. Parsing lives in
- * {@link Parser}, so this class only orchestrates.
+ * save file, and a {@link TaskList} for the tasks -- and turns one line of
+ * input into one reply.
+ *
+ * <p>Two front ends share that logic. {@link #run()} is the console
+ * read-parse-act loop; {@link #getResponse(String)} does the same work for the
+ * JavaFX GUI but hands the reply back as a string instead of printing it.
+ * Parsing lives in {@link Parser}, so this class only orchestrates.
  */
 public class Steph {
 
     private final Ui ui;
     private final Storage storage;
     private final TaskList tasks;
+
+    /** The command handled by the most recent {@link #getResponse} call, or null if it failed. */
+    private Command lastCommand;
+
+    /** Set once the user asks to end the session with "bye". */
+    private boolean isExit;
 
     /**
      * Sets up the collaborators and loads any previously saved tasks.
@@ -38,9 +48,9 @@ public class Steph {
     }
 
     /**
-     * Runs the command loop until the user types "bye" or the input ends:
-     * read a line, ask {@link Parser} what it means, act on it, and save if
-     * the task list changed.
+     * Runs the console command loop until the user types "bye" or the input
+     * ends: read a line, turn it into a reply with {@link #getResponse}, and
+     * print that reply framed by the UI's rules.
      */
     public void run() {
         ui.showWelcome();
@@ -50,37 +60,7 @@ public class Steph {
             if (command.equals("bye")) {
                 break;
             }
-
-            // Parser turns the line into a Command and its argument text, and
-            // throws StephException on anything malformed; the catch below shows
-            // that message, so no handler has to report input errors itself.
-            try {
-                Command commandType = Parser.parseCommand(command);
-                String argument = Parser.parseArguments(command);
-                switch (commandType) {
-                    case LIST -> handleList();
-                    case MARK -> handleMark(argument, true);
-                    case UNMARK -> handleMark(argument, false);
-                    case TODO -> addTask(Parser.parseToDo(argument));
-                    case DEADLINE -> addTask(Parser.parseDeadline(argument));
-                    case EVENT -> addTask(Parser.parseEvent(argument));
-                    case DELETE -> handleDeleteTask(argument);
-                    case FIND -> handleFindTask(Parser.parseFind(argument));
-                    default -> throw new StephException("Uh oh... I dont understand that");
-                }
-
-                // "list" and "find" only read the task list; every other command
-                // changes it, so only those need the file rewritten.
-                boolean isReadOnlyCommand = commandType == Command.LIST || commandType == Command.FIND;
-                if (!isReadOnlyCommand) {
-                    storage.save(tasks.asList());
-                }
-
-            } catch (StephException e) {
-                ui.showError(e.getMessage());
-            } catch (IOException e) {
-                ui.showError("Sorry, I couldn't save your tasks: " + e.getMessage());
-            }
+            ui.showMessage(getResponse(command));
         }
 
         ui.showGoodbye();
@@ -88,7 +68,91 @@ public class Steph {
     }
 
     /**
-     * Launches Steph, using {@code ./data/steph.txt} as the save file.
+     * Turns one line of input into Steph's reply. Parses the line, acts on it
+     * (updating the task list and save file for any command that changes
+     * them), and returns the text to show the user. A malformed command or a
+     * failed save is reported by returning its message rather than throwing.
+     *
+     * @param fullCommand The whole line as typed.
+     * @return The reply text for that command.
+     */
+    public String getResponse(String fullCommand) {
+        String command = fullCommand.trim();
+        if (command.equals("bye")) {
+            isExit = true;
+            lastCommand = null;
+            return "Goodbye. Hope to see you again soon!";
+        }
+
+        // Parser turns the line into a Command and its argument text, and
+        // throws StephException on anything malformed; the catch below turns
+        // that into the reply, so no handler has to report input errors itself.
+        try {
+            Command commandType = Parser.parseCommand(command);
+            String argument = Parser.parseArguments(command);
+            String response = switch (commandType) {
+                case LIST -> handleList();
+                case MARK -> handleMark(argument, true);
+                case UNMARK -> handleMark(argument, false);
+                case TODO -> addTask(Parser.parseToDo(argument));
+                case DEADLINE -> addTask(Parser.parseDeadline(argument));
+                case EVENT -> addTask(Parser.parseEvent(argument));
+                case DELETE -> handleDeleteTask(argument);
+                case FIND -> handleFindTask(Parser.parseFind(argument));
+                default -> throw new StephException("Uh oh... I dont understand that");
+            };
+            lastCommand = commandType;
+
+            // "list" and "find" only read the task list; every other command
+            // changes it, so only those need the file rewritten.
+            boolean isReadOnlyCommand = commandType == Command.LIST || commandType == Command.FIND;
+            if (!isReadOnlyCommand) {
+                storage.save(tasks.asList());
+            }
+            return response;
+
+        } catch (StephException e) {
+            lastCommand = null;
+            return e.getMessage();
+        } catch (IOException e) {
+            lastCommand = null;
+            return "Sorry, I couldn't save your tasks: " + e.getMessage();
+        }
+    }
+
+    /**
+     * Returns the name of the {@link Command} handled by the most recent
+     * {@link #getResponse} call (e.g. {@code "TODO"}), or {@code ""} if that
+     * call was a "bye" or failed. The GUI uses it to tint the reply bubble.
+     *
+     * @return The last command's name, or {@code ""}.
+     */
+    public String getCommandType() {
+        return lastCommand == null ? "" : lastCommand.name();
+    }
+
+    /**
+     * Returns whether the user has ended the session with "bye". The GUI polls
+     * this after each reply to decide when to close the window.
+     *
+     * @return True once "bye" has been handled.
+     */
+    public boolean isExit() {
+        return isExit;
+    }
+
+    /**
+     * Returns the greeting shown when a session starts.
+     *
+     * @return The welcome message.
+     */
+    public static String getWelcomeMessage() {
+        return "Hello! I'm Steph.\nGlad to see you!\nWhat can I help you with?";
+    }
+
+    /**
+     * Launches the console version of Steph, using {@code ./data/steph.txt} as
+     * the save file. The GUI is launched from {@link Launcher} instead.
      *
      * @param args Command-line arguments (unused).
      */
@@ -96,38 +160,36 @@ public class Steph {
         new Steph("./data/steph.txt").run();
     }
 
-    private void handleList() {
-        ui.showMessage(numberedList("Here are the tasks in your list:", tasks.asList()));
+    private String handleList() {
+        return numberedList("Here are the tasks in your list:", tasks.asList());
     }
 
-    private void handleMark(String argument, boolean markAsDone) throws StephException {
+    private String handleMark(String argument, boolean markAsDone) throws StephException {
         String commandWord = markAsDone ? "mark" : "unmark";
         int taskIndex = Parser.parseTaskIndex(argument, tasks.size(), commandWord);
 
         Task task = tasks.get(taskIndex);
         if (markAsDone) {
             task.complete();
-            ui.showMessage("Awesome! I've marked this task as done:\n  " + task);
-        } else {
-            task.uncomplete();
-            ui.showMessage("OK, I've marked this task as not done yet:\n  " + task);
+            return "Awesome! I've marked this task as done:\n  " + task;
         }
+        task.uncomplete();
+        return "OK, I've marked this task as not done yet:\n  " + task;
     }
 
-    private void handleDeleteTask(String argument) throws StephException {
+    private String handleDeleteTask(String argument) throws StephException {
         int taskIndex = Parser.parseTaskIndex(argument, tasks.size(), "delete");
         Task deletedTask = tasks.remove(taskIndex);
-        ui.showMessage("Okay! I've removed this task:\n  " + deletedTask
-                + "\nNow you have " + tasks.size() + " tasks in the list.");
+        return "Okay! I've removed this task:\n  " + deletedTask
+                + "\nNow you have " + tasks.size() + " tasks in the list.";
     }
 
-    private void handleFindTask(String keyword) {
+    private String handleFindTask(String keyword) {
         List<Task> matched = tasks.findMatch(keyword);
         if (matched.isEmpty()) {
-            ui.showMessage("I couldn't find any tasks matching \"" + keyword + "\".");
-            return;
+            return "I couldn't find any tasks matching \"" + keyword + "\".";
         }
-        ui.showMessage(numberedList("Here are the matching tasks in your list:", matched));
+        return numberedList("Here are the matching tasks in your list:", matched);
     }
 
     /**
@@ -135,9 +197,9 @@ public class Steph {
      * task on its own line numbered from 1 -- the format both "list" and "find"
      * print.
      *
-     * @param header the first line, describing what the list is
-     * @param items  the tasks to number, in the order given
-     * @return the assembled multi-line string
+     * @param header The first line, describing what the list is.
+     * @param items  The tasks to number, in the order given.
+     * @return The assembled multi-line string.
      */
     private static String numberedList(String header, List<Task> items) {
         StringBuilder message = new StringBuilder(header);
@@ -147,9 +209,9 @@ public class Steph {
         return message.toString();
     }
 
-    private void addTask(Task newTask) {
+    private String addTask(Task newTask) {
         tasks.add(newTask);
-        ui.showMessage("Got it. I've added this task:\n  " + newTask
-                + "\nNow you have " + tasks.size() + " tasks in the list.");
+        return "Got it. I've added this task:\n  " + newTask
+                + "\nNow you have " + tasks.size() + " tasks in the list.";
     }
 }
