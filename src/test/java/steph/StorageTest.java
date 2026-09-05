@@ -132,10 +132,10 @@ public class StorageTest {
     public void load_corruptedLines_skippedButValidLinesStillLoaded() throws IOException {
         Path file = tempDir.resolve("steph.txt");
         Files.write(file, List.of(
-                "T | 0 | good todo",              // valid
-                "X | 0 | unknown type letter",    // unknown type -> skipped
-                "D | 1 | no date field",          // missing the date column -> skipped
-                "not a task line at all",         // no type letter -> skipped
+                "T | 0 | good todo", // valid
+                "X | 0 | unknown type letter", // unknown type -> skipped
+                "D | 1 | no date field", // missing the date column -> skipped
+                "not a task line at all", // no type letter -> skipped
                 "E | 0 | camp | 2019-10-15T00:00 | 2019-10-16T00:00")); // valid
 
         List<Task> loaded = new Storage(file.toString()).load();
