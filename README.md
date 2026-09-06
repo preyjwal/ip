@@ -24,3 +24,13 @@ Prerequisites: JDK 25, update Intellij to the most recent version.
    ```
 
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.
+
+## Running Steph
+
+* **GUI (JavaFX):** run `./gradlew run`. This launches `steph.Launcher`, which
+  opens the chat window built from `src/main/resources/view/*.fxml` and styled by
+  `src/main/resources/css/*.css`. JavaFX is supplied by the `25.0.3.fx-zulu`
+  JDK, so no extra dependency is needed.
+* **Console:** run `steph.Steph.main()` directly from the IDE (or
+  `java -cp build/classes/java/main steph.Steph`). Both front ends share the
+  same `./data/steph.txt` save file.
