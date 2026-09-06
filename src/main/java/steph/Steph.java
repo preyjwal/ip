@@ -58,14 +58,15 @@ public class Steph {
                 Command commandType = Parser.parseCommand(command);
                 String argument = Parser.parseArguments(command);
                 switch (commandType) {
-                case LIST -> handleList();
-                case MARK -> handleMark(argument, true);
-                case UNMARK -> handleMark(argument, false);
-                case TODO -> addTask(Parser.parseToDo(argument));
-                case DEADLINE -> addTask(Parser.parseDeadline(argument));
-                case EVENT -> addTask(Parser.parseEvent(argument));
-                case DELETE -> handleDeleteTask(argument);
-                case FIND -> handleFindTask(Parser.parseFind(argument));
+                    case LIST -> handleList();
+                    case MARK -> handleMark(argument, true);
+                    case UNMARK -> handleMark(argument, false);
+                    case TODO -> addTask(Parser.parseToDo(argument));
+                    case DEADLINE -> addTask(Parser.parseDeadline(argument));
+                    case EVENT -> addTask(Parser.parseEvent(argument));
+                    case DELETE -> handleDeleteTask(argument);
+                    case FIND -> handleFindTask(Parser.parseFind(argument));
+                    default -> throw new StephException("Uh oh... I dont understand that");
                 }
 
                 // "list" and "find" only read the task list; every other command

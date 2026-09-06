@@ -162,8 +162,8 @@ public class ParserTest {
 
     @Test
     public void parseTaskIndex_invalidInput_messageQuotesCommandWord() {
-        StephException thrown = assertThrows(StephException.class,
-                () -> Parser.parseTaskIndex("nope", TASK_COUNT, "delete"));
+        StephException thrown = assertThrows(StephException.class, () ->
+                Parser.parseTaskIndex("nope", TASK_COUNT, "delete"));
         assertTrue(thrown.getMessage().contains("delete"),
                 "error message should tell the user which command to retry");
     }
@@ -264,44 +264,37 @@ public class ParserTest {
 
     @Test
     public void parseEvent_missingFromMarker_exceptionThrown() {
-        assertThrows(StephException.class,
-                () -> Parser.parseEvent("project meeting /to 2019-10-16"));
+        assertThrows(StephException.class, () -> Parser.parseEvent("project meeting /to 2019-10-16"));
     }
 
     @Test
     public void parseEvent_missingToMarker_exceptionThrown() {
-        assertThrows(StephException.class,
-                () -> Parser.parseEvent("project meeting /from 2019-10-15"));
+        assertThrows(StephException.class, () -> Parser.parseEvent("project meeting /from 2019-10-15"));
     }
 
     @Test
     public void parseEvent_toMarkerBeforeFromMarker_exceptionThrown() {
         // The markers must appear in order, so "/to ... /from ..." is rejected.
-        assertThrows(StephException.class,
-                () -> Parser.parseEvent("project meeting /to 2019-10-16 /from 2019-10-15"));
+        assertThrows(StephException.class, () -> Parser.parseEvent("project meeting /to 2019-10-16 /from 2019-10-15"));
     }
 
     @Test
     public void parseEvent_emptyName_exceptionThrown() {
-        assertThrows(StephException.class,
-                () -> Parser.parseEvent("/from 2019-10-15 /to 2019-10-16"));
+        assertThrows(StephException.class, () -> Parser.parseEvent("/from 2019-10-15 /to 2019-10-16"));
     }
 
     @Test
     public void parseEvent_emptyFrom_exceptionThrown() {
-        assertThrows(StephException.class,
-                () -> Parser.parseEvent("project meeting /from /to 2019-10-16"));
+        assertThrows(StephException.class, () -> Parser.parseEvent("project meeting /from /to 2019-10-16"));
     }
 
     @Test
     public void parseEvent_emptyTo_exceptionThrown() {
-        assertThrows(StephException.class,
-                () -> Parser.parseEvent("project meeting /from 2019-10-15 /to"));
+        assertThrows(StephException.class, () -> Parser.parseEvent("project meeting /from 2019-10-15 /to"));
     }
 
     @Test
     public void parseEvent_unreadableDate_exceptionThrown() {
-        assertThrows(StephException.class,
-                () -> Parser.parseEvent("project meeting /from someday /to 2019-10-16"));
+        assertThrows(StephException.class, () -> Parser.parseEvent("project meeting /from someday /to 2019-10-16"));
     }
 }
