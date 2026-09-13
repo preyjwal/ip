@@ -85,6 +85,7 @@ public class Storage {
      */
     private Task parseTask(String line) throws StephException {
         String[] parts = line.split("\\|");
+        assert parts.length >= 1 : "String.split always returns at least one element, even for an empty line";
 
         for (int i = 0; i < parts.length; i++) {
             parts[i] = parts[i].trim();

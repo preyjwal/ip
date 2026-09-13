@@ -89,6 +89,7 @@ public class Steph {
         // that into the reply, so no handler has to report input errors itself.
         try {
             Command commandType = Parser.parseCommand(command);
+            assert commandType != null : "Parser.parseCommand throws StephException instead of returning null";
             String argument = Parser.parseArguments(command);
             String response = switch (commandType) {
                 case LIST -> handleList();

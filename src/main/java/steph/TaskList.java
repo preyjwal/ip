@@ -32,6 +32,7 @@ public class TaskList {
      * @param initialTasks The tasks to start with.
      */
     public TaskList(List<Task> initialTasks) {
+        assert initialTasks != null : "Storage#load always returns a list, empty at worst, never null";
         this.tasks = new ArrayList<>(initialTasks);
     }
 
@@ -48,6 +49,8 @@ public class TaskList {
      * @return The task at that position.
      */
     public Task get(int index) {
+        assert index >= 0 && index < this.tasks.size()
+                : "index must already be validated by the caller (see Steph's task-number parsing)";
         return this.tasks.get(index);
     }
 
@@ -67,6 +70,8 @@ public class TaskList {
      * @return The task that was removed.
      */
     public Task remove(int index) {
+        assert index >= 0 && index < this.tasks.size()
+                : "index must already be validated by the caller (see Steph's task-number parsing)";
         return this.tasks.remove(index);
     }
 
