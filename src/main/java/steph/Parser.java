@@ -18,6 +18,9 @@ import steph.task.ToDo;
  */
 public class Parser {
 
+    /** Shared opening line for every "couldn't understand your input" error below. */
+    private static final String UNRECOGNIZED_INPUT_PREFIX = "Hmm.. I don't understand that.\n";
+
     /**
      * Identifies which command a line names, from its first word.
      *
@@ -65,7 +68,7 @@ public class Parser {
         } catch (NumberFormatException e) {
             // Not a number, fall through to the shared "valid task number" error.
         }
-        throw new StephException("Hmm.. I don't understand that.\n"
+        throw new StephException(UNRECOGNIZED_INPUT_PREFIX
                 + "Please type \"" + commandWord + " <task-number>\" with a valid task number.");
     }
 
@@ -79,7 +82,7 @@ public class Parser {
      */
     public static String parseFind(String arguments) throws StephException {
         if (arguments.isEmpty()) {
-            throw new StephException("Hmm.. I don't understand that.\nPlease type \"find <keyword>\".");
+            throw new StephException(UNRECOGNIZED_INPUT_PREFIX + "Please type \"find <keyword>\".");
         }
         return arguments;
     }
@@ -93,7 +96,7 @@ public class Parser {
      */
     public static ToDo parseToDo(String arguments) throws StephException {
         if (arguments.isEmpty()) {
-            throw new StephException("Hmm.. I don't understand that.\nPlease type \"todo <task-name>\".");
+            throw new StephException(UNRECOGNIZED_INPUT_PREFIX + "Please type \"todo <task-name>\".");
         }
         return new ToDo(arguments);
     }
@@ -109,17 +112,16 @@ public class Parser {
      *                        date cannot be read.
      */
     public static Deadline parseDeadline(String arguments) throws StephException {
+        String usageMessage = UNRECOGNIZED_INPUT_PREFIX + "Please type \"deadline <task-name> /by <yyyy-mm-dd>\".";
         int byIndex = arguments.indexOf("/by");
         if (byIndex == -1) {
-            throw new StephException(
-                    "Hmm.. I don't understand that.\nPlease type \"deadline <task-name> /by <yyyy-mm-dd>\".");
+            throw new StephException(usageMessage);
         }
 
         String name = arguments.substring(0, byIndex).trim();
         String by = arguments.substring(byIndex + "/by".length()).trim();
         if (name.isEmpty() || by.isEmpty()) {
-            throw new StephException(
-                    "Hmm.. I don't understand that.\nPlease type \"deadline <task-name> /by <yyyy-mm-dd>\".");
+            throw new StephException(usageMessage);
         }
         return new Deadline(name, parseDateTime(by));
     }
@@ -135,13 +137,14 @@ public class Parser {
      *                        part is empty, or a date cannot be read.
      */
     public static Event parseEvent(String arguments) throws StephException {
+        String usageMessage = UNRECOGNIZED_INPUT_PREFIX
+                + "Please type \"event <task-name> /from <yyyy-mm-dd> /to <yyyy-mm-dd>\".";
         int fromIndex = arguments.indexOf("/from");
         int toIndex = arguments.indexOf("/to");
         boolean validOrder = fromIndex != -1 && toIndex != -1 && fromIndex < toIndex;
 
         if (!validOrder) {
-            throw new StephException("Hmm.. I don't understand that.\n"
-                    + "Please type \"event <task-name> /from <yyyy-mm-dd> /to <yyyy-mm-dd>\".");
+            throw new StephException(usageMessage);
         }
 
         String name = arguments.substring(0, fromIndex).trim();
@@ -149,8 +152,7 @@ public class Parser {
         String to = arguments.substring(toIndex + "/to".length()).trim();
 
         if (name.isEmpty() || from.isEmpty() || to.isEmpty()) {
-            throw new StephException("Hmm.. I don't understand that.\n"
-                    + "Please type \"event <task-name> /from <yyyy-mm-dd> /to <yyyy-mm-dd>\".");
+            throw new StephException(usageMessage);
         }
         return new Event(name, parseDateTime(from), parseDateTime(to));
     }
