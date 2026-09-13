@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import steph.task.Deadline;
 import steph.task.Event;
@@ -84,7 +85,7 @@ public class Storage {
      *                        or holds an unparseable date.
      */
     private Task parseTask(String line) throws StephException {
-        String[] parts = line.split("\\|");
+        String[] parts = line.split(Pattern.quote(Task.FIELD_SEPARATOR));
         assert parts.length >= 1 : "String.split always returns at least one element, even for an empty line";
 
         for (int i = 0; i < parts.length; i++) {

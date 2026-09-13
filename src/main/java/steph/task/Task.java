@@ -5,6 +5,14 @@ package steph.task;
  * (ToDo, Deadline, Event) extend this class.
  */
 public abstract class Task {
+
+    /**
+     * Separates fields within a save-file line (see {@link #toFileFormat()}).
+     * Shared so every subclass's {@code toFileFormat()} and
+     * {@link steph.Storage}'s reader agree on the same delimiter.
+     */
+    public static final String FIELD_SEPARATOR = "|";
+
     private final String name;
     private boolean isDone;
 
@@ -42,7 +50,7 @@ public abstract class Task {
      * append any extra fields) to produce the full line written to disk.
      */
     public String toFileFormat() {
-        return " | " + (isDone ? "1" : "0") + " | " + this.name;
+        return " " + FIELD_SEPARATOR + " " + (isDone ? "1" : "0") + " " + FIELD_SEPARATOR + " " + this.name;
     }
 
     /**
