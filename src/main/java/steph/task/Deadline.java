@@ -28,7 +28,7 @@ public class Deadline extends Task {
      */
     @Override
     public String toFileFormat() {
-        return "D" + super.toFileFormat() + " | " + DateTimes.toStorageFormat(this.by);
+        return "D" + super.toFileFormat() + " " + FIELD_SEPARATOR + " " + DateTimes.toStorageFormat(this.by);
     }
 
     /**
