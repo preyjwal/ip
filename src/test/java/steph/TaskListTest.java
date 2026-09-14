@@ -243,8 +243,8 @@ public class TaskListTest {
     public void addEvent_clashesNotForced_throwsAndEventNotAdded() {
         TaskList list = new TaskList(List.of(event("meeting", 9, 0, 10, 0)));
 
-        assertThrows(StephException.class,
-                () -> list.addEvent(new ParsedEvent(event("clash", 9, 30, 10, 30), false)));
+        assertThrows(StephException.class, () ->
+                list.addEvent(new ParsedEvent(event("clash", 9, 30, 10, 30), false)));
         assertEquals(1, list.size());
     }
 
@@ -265,8 +265,8 @@ public class TaskListTest {
         Event second = event("second", 9, 30, 10, 30);
         TaskList list = new TaskList(List.of(first, second));
 
-        StephException thrown = assertThrows(StephException.class,
-                () -> list.addEvent(new ParsedEvent(event("new", 9, 15, 10, 15), false)));
+        StephException thrown = assertThrows(StephException.class, () ->
+                list.addEvent(new ParsedEvent(event("new", 9, 15, 10, 15), false)));
 
         assertTrue(thrown.getMessage().contains(first.toString()), thrown.getMessage());
         assertTrue(thrown.getMessage().contains(second.toString()), thrown.getMessage());

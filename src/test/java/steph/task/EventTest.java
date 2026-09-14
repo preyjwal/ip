@@ -78,7 +78,7 @@ public class EventTest {
     }
 
     @Test
-    public void clashesWith_timedStartDateOnlyEnd_expandsEndOfDay_returnsTrue() {
+    public void clashesWith_dateOnlyEndAfterTimedStart_returnsTrue() {
         // "/from 2019-10-15 0900 /to 2019-10-16" treats the date-only end as
         // running through all of Oct 16, so it clashes with something later
         // that same day.
