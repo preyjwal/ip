@@ -572,3 +572,145 @@ find
 Hmm.. I don't understand that.
 Please type "find <keyword>".
 ```
+
+## Test case: Adding a clashing event is rejected
+
+**Aim:** An `event` that overlaps an existing pending event is rejected
+instead of silently added, and the rejection message lists which event it
+clashes with and how to add it anyway.
+
+### Command
+```
+event camp /from 2019-10-15 1400 /to 2019-10-15 1800
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [E][ ] camp (from: Oct 15 2019, 2:00pm to: Oct 15 2019, 6:00pm)
+Now you have 1 tasks in the list.
+```
+
+### Command
+```
+event trip /from 2019-10-15 1600 /to 2019-10-15 2000
+```
+
+### Expected output
+```
+This clashes with an existing event:
+  [E][ ] camp (from: Oct 15 2019, 2:00pm to: Oct 15 2019, 6:00pm)
+Add '/force' to the command if you want to schedule it anyway.
+```
+
+## Test case: /force overrides a clash
+
+**Aim:** Appending a trailing `/force` to an `event` command skips the clash
+check entirely, adding the event despite the overlap.
+
+### Command
+```
+event camp /from 2019-10-15 1400 /to 2019-10-15 1800
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [E][ ] camp (from: Oct 15 2019, 2:00pm to: Oct 15 2019, 6:00pm)
+Now you have 1 tasks in the list.
+```
+
+### Command
+```
+event trip /from 2019-10-15 1600 /to 2019-10-15 2000 /force
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [E][ ] trip (from: Oct 15 2019, 4:00pm to: Oct 15 2019, 8:00pm)
+Now you have 2 tasks in the list.
+```
+
+### Command
+```
+list
+```
+
+### Expected output
+```
+Here are the tasks in your list:
+1.[E][ ] camp (from: Oct 15 2019, 2:00pm to: Oct 15 2019, 6:00pm)
+2.[E][ ] trip (from: Oct 15 2019, 4:00pm to: Oct 15 2019, 8:00pm)
+```
+
+## Test case: Completed events are excluded from the clash check
+
+**Aim:** Once an event is marked done, it no longer represents a live
+scheduling commitment, so a new event overlapping it is added normally
+instead of being rejected.
+
+### Command
+```
+event camp /from 2019-10-15 1400 /to 2019-10-15 1800
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [E][ ] camp (from: Oct 15 2019, 2:00pm to: Oct 15 2019, 6:00pm)
+Now you have 1 tasks in the list.
+```
+
+### Command
+```
+mark 1
+```
+
+### Expected output
+```
+Awesome! I've marked this task as done:
+  [E][X] camp (from: Oct 15 2019, 2:00pm to: Oct 15 2019, 6:00pm)
+```
+
+### Command
+```
+event trip /from 2019-10-15 1600 /to 2019-10-15 2000
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [E][ ] trip (from: Oct 15 2019, 4:00pm to: Oct 15 2019, 8:00pm)
+Now you have 2 tasks in the list.
+```
+
+## Test case: A date-only event clashes with a timed event the same day
+
+**Aim:** An event given without a time (defaulting to midnight) is treated as
+spanning the whole day for the clash check, so it clashes with a timed event
+later that same day.
+
+### Command
+```
+event campout /from 2019-11-01 /to 2019-11-01
+```
+
+### Expected output
+```
+Got it. I've added this task:
+  [E][ ] campout (from: Nov 01 2019 to: Nov 01 2019)
+Now you have 1 tasks in the list.
+```
+
+### Command
+```
+event lunch /from 2019-11-01 1200 /to 2019-11-01 1300
+```
+
+### Expected output
+```
+This clashes with an existing event:
+  [E][ ] campout (from: Nov 01 2019 to: Nov 01 2019)
+Add '/force' to the command if you want to schedule it anyway.
+```

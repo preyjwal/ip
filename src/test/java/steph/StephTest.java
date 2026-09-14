@@ -109,4 +109,42 @@ public class StephTest {
 
         assertEquals("Here are the tasks in your list:\n1.[T][ ] persist me", response);
     }
+
+    @Test
+    public void getResponse_eventClashesWithExistingPendingEvent_repliesWithClashMessage() {
+        Steph steph = newSteph();
+        steph.getResponse("event trip /from 2019-10-15 /to 2019-10-15");
+
+        String response = steph.getResponse("event conflict /from 2019-10-15 /to 2019-10-15");
+
+        assertEquals("This clashes with an existing event:\n"
+                + "  [E][ ] trip (from: Oct 15 2019 to: Oct 15 2019)\n"
+                + "Add '/force' to the command if you want to schedule it anyway.", response);
+        assertEquals("", steph.getCommandType());
+    }
+
+    @Test
+    public void getResponse_blockedEventAdd_notPersistedAndTaskCountUnchanged() {
+        newSteph().getResponse("event trip /from 2019-10-15 /to 2019-10-15");
+        Steph steph = newSteph();
+        steph.getResponse("event conflict /from 2019-10-15 /to 2019-10-15");
+
+        String response = steph.getResponse("list");
+
+        assertEquals("Here are the tasks in your list:\n"
+                + "1.[E][ ] trip (from: Oct 15 2019 to: Oct 15 2019)", response);
+    }
+
+    @Test
+    public void getResponse_eventWithTrailingForceFlag_bypassesClashCheckAndAdds() {
+        Steph steph = newSteph();
+        steph.getResponse("event trip /from 2019-10-15 /to 2019-10-15");
+
+        String response = steph.getResponse("event conflict /from 2019-10-15 /to 2019-10-15 /force");
+
+        assertEquals("Got it. I've added this task:\n"
+                + "  [E][ ] conflict (from: Oct 15 2019 to: Oct 15 2019)\n"
+                + "Now you have 2 tasks in the list.", response);
+        assertEquals("EVENT", steph.getCommandType());
+    }
 }

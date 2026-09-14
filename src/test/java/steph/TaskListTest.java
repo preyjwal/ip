@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import steph.task.Deadline;
+import steph.task.Event;
 import steph.task.Task;
 import steph.task.ToDo;
 
@@ -161,5 +164,117 @@ public class TaskListTest {
         list.add(new ToDo("borrow book"));
 
         assertEquals(1, matches.size());
+    }
+
+    // ====================================================================
+    // findClashingEvents / addEvent
+    //
+    // Contract: only not-done Events are compared against a candidate Event
+    // (overlap itself is Event#clashesWith, tested in EventTest); addEvent
+    // rejects a clash unless forced, and adds/reports normally otherwise.
+    // ====================================================================
+
+    @Test
+    public void findClashingEvents_overlappingPendingEvent_returnsIt() {
+        Event existing = event("meeting", 9, 0, 10, 0);
+        TaskList list = new TaskList(List.of(existing));
+
+        List<Event> clashes = list.findClashingEvents(event("clash", 9, 30, 10, 30));
+
+        assertEquals(List.of(existing), clashes);
+    }
+
+    @Test
+    public void findClashingEvents_nonOverlappingEvent_returnsEmpty() {
+        TaskList list = new TaskList(List.of(event("meeting", 9, 0, 10, 0)));
+
+        List<Event> clashes = list.findClashingEvents(event("later", 14, 0, 15, 0));
+
+        assertTrue(clashes.isEmpty());
+    }
+
+    @Test
+    public void findClashingEvents_doneClashingEvent_excludedFromResult() {
+        Event done = event("meeting", 9, 0, 10, 0);
+        done.complete();
+        TaskList list = new TaskList(List.of(done));
+
+        List<Event> clashes = list.findClashingEvents(event("clash", 9, 30, 10, 30));
+
+        assertTrue(clashes.isEmpty());
+    }
+
+    @Test
+    public void findClashingEvents_toDoAndDeadlineIgnored_onlyEventsConsidered() {
+        Task todo = new ToDo("unrelated todo");
+        Task deadline = new Deadline("unrelated deadline", LocalDateTime.of(2019, 10, 15, 9, 30));
+        TaskList list = new TaskList(List.of(todo, deadline));
+
+        List<Event> clashes = list.findClashingEvents(event("clash", 9, 0, 10, 0));
+
+        assertTrue(clashes.isEmpty());
+    }
+
+    @Test
+    public void findClashingEvents_multipleClashingEvents_returnsAllInOrder() {
+        Event first = event("first", 9, 0, 10, 0);
+        Event second = event("second", 9, 30, 10, 30);
+        TaskList list = new TaskList(List.of(first, second));
+
+        List<Event> clashes = list.findClashingEvents(event("new", 9, 15, 10, 15));
+
+        assertEquals(List.of(first, second), clashes);
+    }
+
+    @Test
+    public void addEvent_noClash_addsAndReturnsConfirmationMessage() throws StephException {
+        TaskList list = new TaskList();
+        Event newEvent = event("meeting", 9, 0, 10, 0);
+
+        String response = list.addEvent(new ParsedEvent(newEvent, false));
+
+        assertEquals(1, list.size());
+        assertSame(newEvent, list.get(0));
+        assertEquals("Got it. I've added this task:\n  " + newEvent
+                + "\nNow you have 1 tasks in the list.", response);
+    }
+
+    @Test
+    public void addEvent_clashesNotForced_throwsAndEventNotAdded() {
+        TaskList list = new TaskList(List.of(event("meeting", 9, 0, 10, 0)));
+
+        assertThrows(StephException.class,
+                () -> list.addEvent(new ParsedEvent(event("clash", 9, 30, 10, 30), false)));
+        assertEquals(1, list.size());
+    }
+
+    @Test
+    public void addEvent_clashesButForced_addsDespiteClash() throws StephException {
+        TaskList list = new TaskList(List.of(event("meeting", 9, 0, 10, 0)));
+        Event forced = event("clash", 9, 30, 10, 30);
+
+        list.addEvent(new ParsedEvent(forced, true));
+
+        assertEquals(2, list.size());
+        assertSame(forced, list.get(1));
+    }
+
+    @Test
+    public void addEvent_clashesWithMultipleEvents_messageListsAllOfThem() {
+        Event first = event("first", 9, 0, 10, 0);
+        Event second = event("second", 9, 30, 10, 30);
+        TaskList list = new TaskList(List.of(first, second));
+
+        StephException thrown = assertThrows(StephException.class,
+                () -> list.addEvent(new ParsedEvent(event("new", 9, 15, 10, 15), false)));
+
+        assertTrue(thrown.getMessage().contains(first.toString()), thrown.getMessage());
+        assertTrue(thrown.getMessage().contains(second.toString()), thrown.getMessage());
+    }
+
+    private static Event event(String name, int fromHour, int fromMinute, int toHour, int toMinute) {
+        LocalDateTime from = LocalDateTime.of(2019, 10, 15, fromHour, fromMinute);
+        LocalDateTime to = LocalDateTime.of(2019, 10, 15, toHour, toMinute);
+        return new Event(name, from, to);
     }
 }
