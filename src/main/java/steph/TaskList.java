@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import steph.task.Event;
 import steph.task.Task;
 
 /**
@@ -100,5 +101,59 @@ public class TaskList {
         return this.tasks.stream()
                 .filter(task -> task.getName().toLowerCase().contains(loweredKeyword))
                 .toList();
+    }
+
+    /**
+     * Returns the not-done Events already in this list whose span overlaps
+     * {@code candidate}'s, in list order. ToDo and Deadline tasks, and any
+     * Event already marked done, are never included.
+     *
+     * @param candidate The event being considered for addition.
+     * @return The clashing events, in list order; empty if none clash.
+     */
+    public List<Event> findClashingEvents(Event candidate) {
+        return this.tasks.stream()
+                .filter(task -> task instanceof Event)
+                .map(task -> (Event) task)
+                .filter(event -> !event.isDone())
+                .filter(event -> event.clashesWith(candidate))
+                .toList();
+    }
+
+    /**
+     * Adds a parsed event, unless it clashes with an existing not-done event
+     * and wasn't forced -- in which case it is rejected and nothing is added.
+     *
+     * @param parsedEvent The event to add and whether "/force" was given.
+     * @return The confirmation message.
+     * @throws StephException If it clashes with an existing event and isn't forced.
+     */
+    public String addEvent(ParsedEvent parsedEvent) throws StephException {
+        Event event = parsedEvent.event();
+        if (!parsedEvent.isForce()) {
+            List<Event> clashes = findClashingEvents(event);
+            if (!clashes.isEmpty()) {
+                throw new StephException(buildClashMessage(clashes));
+            }
+        }
+        this.tasks.add(event);
+        return "Got it. I've added this task:\n  " + event
+                + "\nNow you have " + this.tasks.size() + " tasks in the list.";
+    }
+
+    /**
+     * Builds the rejection message listing every event a new event clashes
+     * with, and how to override the rejection.
+     *
+     * @param clashes The clashing events, in list order.
+     * @return The assembled multi-line message.
+     */
+    private static String buildClashMessage(List<Event> clashes) {
+        StringBuilder message = new StringBuilder("This clashes with an existing event:");
+        for (Event clash : clashes) {
+            message.append("\n  ").append(clash);
+        }
+        message.append("\nAdd '/force' to the command if you want to schedule it anyway.");
+        return message.toString();
     }
 }

@@ -1,6 +1,7 @@
 package steph;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -255,10 +256,27 @@ public class ParserTest {
 
     @Test
     public void parseEvent_nameFromAndTo_eventBuilt() throws StephException {
-        Event event = Parser.parseEvent("project meeting /from 2019-10-15 /to 2019-10-16");
+        ParsedEvent parsed = Parser.parseEvent("project meeting /from 2019-10-15 /to 2019-10-16");
+        Event event = parsed.event();
         assertEquals("project meeting", event.getName());
         String shown = event.toString();
         assertTrue(shown.contains("Oct 15 2019"), shown);
+        assertTrue(shown.contains("Oct 16 2019"), shown);
+        assertFalse(parsed.isForce());
+    }
+
+    @Test
+    public void parseEvent_withoutForceFlag_isForceFalse() throws StephException {
+        ParsedEvent parsed = Parser.parseEvent("project meeting /from 2019-10-15 /to 2019-10-16");
+        assertFalse(parsed.isForce());
+    }
+
+    @Test
+    public void parseEvent_withTrailingForceFlag_isForceTrueAndForceStrippedFromDates() throws StephException {
+        ParsedEvent parsed = Parser.parseEvent("project meeting /from 2019-10-15 /to 2019-10-16 /force");
+        assertTrue(parsed.isForce());
+        // "/force" must not have leaked into the "to" date text.
+        String shown = parsed.event().toString();
         assertTrue(shown.contains("Oct 16 2019"), shown);
     }
 

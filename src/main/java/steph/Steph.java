@@ -97,7 +97,7 @@ public class Steph {
                 case UNMARK -> handleMark(argument, false);
                 case TODO -> addTask(Parser.parseToDo(argument));
                 case DEADLINE -> addTask(Parser.parseDeadline(argument));
-                case EVENT -> addTask(Parser.parseEvent(argument));
+                case EVENT -> tasks.addEvent(Parser.parseEvent(argument));
                 case DELETE -> handleDeleteTask(argument);
                 case FIND -> handleFindTask(Parser.parseFind(argument));
                 default -> throw new StephException("Uh oh... I dont understand that");

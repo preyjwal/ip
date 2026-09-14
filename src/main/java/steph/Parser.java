@@ -126,17 +126,25 @@ public class Parser {
 
     /**
      * Builds an Event from
-     * {@code <task-name> /from <yyyy-mm-dd> [HHmm] /to <yyyy-mm-dd> [HHmm]},
-     * splitting first on "/from" and then on "/to" within the remainder.
+     * {@code <task-name> /from <yyyy-mm-dd> [HHmm] /to <yyyy-mm-dd> [HHmm] [/force]},
+     * splitting first on "/from" and then on "/to" within the remainder. A
+     * trailing "/force" asks the caller to skip the schedule-clash check;
+     * it's stripped here, before the "/from"/"/to" split, so it never leaks
+     * into the "to" date text.
      *
      * @param arguments The text after the "event" keyword.
-     * @return The new Event.
+     * @return The new Event, and whether "/force" was given.
      * @throws StephException If the markers are missing or out of order, any
      *                        part is empty, or a date cannot be read.
      */
-    public static Event parseEvent(String arguments) throws StephException {
-        int fromIndex = arguments.indexOf("/from");
-        int toIndex = arguments.indexOf("/to");
+    public static ParsedEvent parseEvent(String arguments) throws StephException {
+        boolean isForce = arguments.endsWith("/force");
+        String cleanedArguments = isForce
+                ? arguments.substring(0, arguments.length() - "/force".length()).trim()
+                : arguments;
+
+        int fromIndex = cleanedArguments.indexOf("/from");
+        int toIndex = cleanedArguments.indexOf("/to");
         boolean validOrder = fromIndex != -1 && toIndex != -1 && fromIndex < toIndex;
 
         if (!validOrder) {
@@ -144,15 +152,15 @@ public class Parser {
                     + "Please type \"event <task-name> /from <yyyy-mm-dd> /to <yyyy-mm-dd>\".");
         }
 
-        String name = arguments.substring(0, fromIndex).trim();
-        String from = arguments.substring(fromIndex + "/from".length(), toIndex).trim();
-        String to = arguments.substring(toIndex + "/to".length()).trim();
+        String name = cleanedArguments.substring(0, fromIndex).trim();
+        String from = cleanedArguments.substring(fromIndex + "/from".length(), toIndex).trim();
+        String to = cleanedArguments.substring(toIndex + "/to".length()).trim();
 
         if (name.isEmpty() || from.isEmpty() || to.isEmpty()) {
             throw new StephException("Hmm.. I don't understand that.\n"
                     + "Please type \"event <task-name> /from <yyyy-mm-dd> /to <yyyy-mm-dd>\".");
         }
-        return new Event(name, parseDateTime(from), parseDateTime(to));
+        return new ParsedEvent(new Event(name, parseDateTime(from), parseDateTime(to)), isForce);
     }
 
     /**
