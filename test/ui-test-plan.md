@@ -603,6 +603,46 @@ This clashes with an existing event:
 Add '/force' to the command if you want to schedule it anyway.
 ```
 
+## Test case: An event whose start isn't before its end is rejected
+
+**Aim:** An `event` command is rejected -- rather than silently accepted with
+a backwards or zero-duration range -- when its `/from` is not strictly
+before its `/to`. This is checked before the clash check, so it applies even
+to the very first event, and `/force` does not bypass it.
+
+### Command
+```
+event exam /from 2019-10-20 /to 2019-10-15
+```
+
+### Expected output
+```
+Hmm.. I don't understand that.
+An event's start (Oct 20 2019) must be before its end (Oct 15 2019).
+```
+
+### Command
+```
+event exam /from 2019-10-15 1400 /to 2019-10-15 1400
+```
+
+### Expected output
+```
+Hmm.. I don't understand that.
+An event's start (Oct 15 2019, 2:00pm) must be before its end (Oct 15 2019, 2:00pm).
+```
+
+### Command
+```
+event exam /from 2019-10-20 /to 2019-10-15 /force
+```
+
+### Expected output
+```
+Hmm.. I don't understand that.
+An event's start (Oct 20 2019) must be before its end (Oct 15 2019).
+```
+
 ## Test case: /force overrides a clash
 
 **Aim:** Appending a trailing `/force` to an `event` command skips the clash

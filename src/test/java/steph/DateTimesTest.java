@@ -155,4 +155,28 @@ public class DateTimesTest {
         assertEquals("oct 15 2019, 12:01am",
                 DateTimes.toDisplayFormat(LocalDateTime.of(2019, 10, 15, 0, 1)).toLowerCase());
     }
+
+    // ====================================================================
+    // expandIfMidnight -- a midnight boundary means "through the end of
+    // that day," so it expands to the start of the next day; any other
+    // time is left unchanged.
+    // ====================================================================
+
+    @Test
+    public void expandIfMidnight_midnight_returnsStartOfNextDay() {
+        assertEquals(LocalDateTime.of(2019, 10, 16, 0, 0),
+                DateTimes.expandIfMidnight(LocalDateTime.of(2019, 10, 15, 0, 0)));
+    }
+
+    @Test
+    public void expandIfMidnight_oneMinutePastMidnight_returnedUnchanged() {
+        LocalDateTime oneMinutePastMidnight = LocalDateTime.of(2019, 10, 15, 0, 1);
+        assertEquals(oneMinutePastMidnight, DateTimes.expandIfMidnight(oneMinutePastMidnight));
+    }
+
+    @Test
+    public void expandIfMidnight_afternoon_returnedUnchanged() {
+        LocalDateTime afternoon = LocalDateTime.of(2019, 10, 15, 14, 0);
+        assertEquals(afternoon, DateTimes.expandIfMidnight(afternoon));
+    }
 }
