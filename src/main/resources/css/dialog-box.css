@@ -65,3 +65,14 @@
     -fx-background-color: #d1ecf1;
     -fx-border-color: #a6d5df;
 }
+
+/* Error replies (feature 7): a bolder, higher-contrast style than the tints
+   above so a rejected/malformed command reads as different at a glance
+   rather than just another colour in the same family. */
+.error-label {
+    -fx-background-color: #ffe0e0;
+    -fx-text-fill: #7a1f1f;
+    -fx-border-color: #d9534f;
+    -fx-border-width: 2px;
+    -fx-font-weight: bold;
+}

@@ -11,16 +11,16 @@ import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Unit tests for {@link Steph#getResponse(String)} and the small pieces of
- * state the GUI reads alongside it ({@link Steph#getCommandType()} and
- * {@link Steph#isExit()}).
+ * state the GUI reads alongside it ({@link Steph#getCommandType()},
+ * {@link Steph#isLastResponseError()}, and {@link Steph#isExit()}).
  *
  * <p>{@code getResponse} is the single entry point both front ends funnel
  * through: it parses a line, mutates the task list, saves, and returns the
  * reply text. The branching that matters here is which command ran (so the
- * GUI can tint the reply), whether a failed command clears that, whether
- * "bye" flips the exit flag, and whether a mutating command is actually
- * persisted. Each test gets its own {@link TempDir} save file so nothing
- * touches the real {@code ./data/steph.txt}.
+ * GUI can tint the reply), whether a failed command clears that and flags it
+ * as an error, whether "bye" flips the exit flag, and whether a mutating
+ * command is actually persisted. Each test gets its own {@link TempDir} save
+ * file so nothing touches the real {@code ./data/steph.txt}.
  */
 public class StephTest {
 
@@ -40,6 +40,7 @@ public class StephTest {
         assertEquals("Got it. I've added this task:\n  [T][ ] buy milk\n"
                 + "Now you have 1 tasks in the list.", response);
         assertEquals("TODO", steph.getCommandType());
+        assertFalse(steph.isLastResponseError());
     }
 
     @Test
@@ -51,6 +52,7 @@ public class StephTest {
 
         assertEquals("Hmm.. I don't understand that command: \"sing\".", response);
         assertEquals("", steph.getCommandType());
+        assertTrue(steph.isLastResponseError());
     }
 
     @Test
@@ -86,6 +88,7 @@ public class StephTest {
 
         assertEquals("Here are the tasks in your list:\n1.[T][ ] read book", response);
         assertEquals("LIST", steph.getCommandType());
+        assertFalse(steph.isLastResponseError());
     }
 
     @Test
@@ -121,6 +124,7 @@ public class StephTest {
                 + "  [E][ ] trip (from: Oct 15 2019 to: Oct 15 2019)\n"
                 + "Add '/force' to the command if you want to schedule it anyway.", response);
         assertEquals("", steph.getCommandType());
+        assertTrue(steph.isLastResponseError());
     }
 
     @Test

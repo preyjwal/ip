@@ -25,6 +25,9 @@ public class Steph {
     /** The command handled by the most recent {@link #getResponse} call, or null if it failed. */
     private Command lastCommand;
 
+    /** Whether the most recent {@link #getResponse} call failed (a caught exception, not "bye"). */
+    private boolean lastResponseIsError;
+
     /** Set once the user asks to end the session with "bye". */
     private boolean isExit;
 
@@ -81,6 +84,7 @@ public class Steph {
         if (command.equals("bye")) {
             isExit = true;
             lastCommand = null;
+            lastResponseIsError = false;
             return "Goodbye. Hope to see you again soon!";
         }
 
@@ -103,6 +107,7 @@ public class Steph {
                 default -> throw new StephException("Uh oh... I dont understand that");
             };
             lastCommand = commandType;
+            lastResponseIsError = false;
 
             // "list" and "find" only read the task list; every other command
             // changes it, so only those need the file rewritten.
@@ -114,9 +119,11 @@ public class Steph {
 
         } catch (StephException e) {
             lastCommand = null;
+            lastResponseIsError = true;
             return e.getMessage();
         } catch (IOException e) {
             lastCommand = null;
+            lastResponseIsError = true;
             return "Sorry, I couldn't save your tasks: " + e.getMessage();
         }
     }
@@ -130,6 +137,18 @@ public class Steph {
      */
     public String getCommandType() {
         return lastCommand == null ? "" : lastCommand.name();
+    }
+
+    /**
+     * Returns whether the most recent {@link #getResponse} call failed (a
+     * malformed command, an out-of-range index, a rejected event clash, or a
+     * failed save) rather than "bye" or a successful command. The GUI uses it
+     * to style the reply bubble as an error.
+     *
+     * @return True if the most recent call's reply is an error message.
+     */
+    public boolean isLastResponseError() {
+        return lastResponseIsError;
     }
 
     /**
