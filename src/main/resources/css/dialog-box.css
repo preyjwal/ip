@@ -31,8 +31,12 @@
     -fx-background-radius: 12px 12px 12px 0;
 }
 
-#displayPicture {
-    -fx-background-radius: 50%;
+/* The circular mask itself is a Circle clip on the ImageView in
+   DialogBox.fxml (a clip -- not -fx-background-radius, which only affects
+   Region backgrounds, never an ImageView). The drop shadow lives on this
+   wrapping StackPane instead of the clipped ImageView, since a node's clip
+   also cuts off anything its own effect renders outside its bounds. */
+#avatarFrame {
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.25), 8, 0.3, 2, 3);
 }
 

@@ -4,6 +4,8 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.shape.Circle?>
 
 <!--
     One chat bubble: a wrapped text Label next to a circular avatar ImageView.
@@ -25,7 +27,13 @@
                 <Insets left="4.0" right="4.0" />
             </HBox.margin>
         </Label>
-        <ImageView fx:id="displayPicture" fitHeight="56.0" fitWidth="56.0" pickOnBounds="true"
-                   preserveRatio="true" />
+        <StackPane id="avatarFrame">
+            <ImageView fx:id="displayPicture" fitHeight="56.0" fitWidth="56.0" pickOnBounds="true"
+                       preserveRatio="true">
+                <clip>
+                    <Circle radius="28.0" centerX="28.0" centerY="28.0" />
+                </clip>
+            </ImageView>
+        </StackPane>
     </children>
 </fx:root>
