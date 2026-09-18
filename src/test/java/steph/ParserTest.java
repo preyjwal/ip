@@ -315,4 +315,54 @@ public class ParserTest {
     public void parseEvent_unreadableDate_exceptionThrown() {
         assertThrows(StephException.class, () -> Parser.parseEvent("project meeting /from someday /to 2019-10-16"));
     }
+
+    // ====================================================================
+    // parseEvent -- start must come before end
+    //
+    // Contract: "/from" must be strictly before "/to", except that a
+    // same-day date-only "/from"/"/to" pair (both default to midnight) is a
+    // valid whole-day event, since a date-only end means "through the end
+    // of that day" (see Event#clashesWith and DateTimes#expandIfMidnight).
+    // ====================================================================
+
+    @Test
+    public void parseEvent_startAfterEnd_exceptionThrown() {
+        assertThrows(StephException.class, () ->
+                Parser.parseEvent("exam /from 2019-10-20 /to 2019-10-15"));
+    }
+
+    @Test
+    public void parseEvent_startEqualsEndWithTime_exceptionThrown() {
+        assertThrows(StephException.class, () ->
+                Parser.parseEvent("exam /from 2019-10-15 1400 /to 2019-10-15 1400"));
+    }
+
+    @Test
+    public void parseEvent_startOneMinuteAfterEnd_exceptionThrown() {
+        assertThrows(StephException.class, () ->
+                Parser.parseEvent("exam /from 2019-10-15 1401 /to 2019-10-15 1400"));
+    }
+
+    @Test
+    public void parseEvent_startBeforeEndByOneMinute_eventBuilt() throws StephException {
+        ParsedEvent parsed = Parser.parseEvent("exam /from 2019-10-15 1359 /to 2019-10-15 1400");
+        assertEquals("exam", parsed.event().getName());
+    }
+
+    @Test
+    public void parseEvent_sameDayDateOnlyStartAndEnd_wholeDayEventBuilt() throws StephException {
+        // "/from 2019-10-15 /to 2019-10-15" both default to midnight, but a
+        // date-only end means "through the end of that day," so this is a
+        // valid whole-day event rather than a backwards or empty range.
+        ParsedEvent parsed = Parser.parseEvent("campout /from 2019-10-15 /to 2019-10-15");
+        assertEquals("campout", parsed.event().getName());
+    }
+
+    @Test
+    public void parseEvent_startAfterEnd_messageNamesBothValues() {
+        StephException thrown = assertThrows(StephException.class, () ->
+                Parser.parseEvent("exam /from 2019-10-20 /to 2019-10-15"));
+        assertTrue(thrown.getMessage().contains("Oct 20 2019"), thrown.getMessage());
+        assertTrue(thrown.getMessage().contains("Oct 15 2019"), thrown.getMessage());
+    }
 }

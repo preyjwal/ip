@@ -137,7 +137,8 @@ public class Parser {
      * @param arguments The text after the "event" keyword.
      * @return The new Event, and whether "/force" was given.
      * @throws StephException If the markers are missing or out of order, any
-     *                        part is empty, or a date cannot be read.
+     *                        part is empty, a date cannot be read, or the
+     *                        start does not come before the end.
      */
     public static ParsedEvent parseEvent(String arguments) throws StephException {
         String usageMessage = UNRECOGNIZED_INPUT_PREFIX
@@ -163,7 +164,20 @@ public class Parser {
         if (name.isEmpty() || from.isEmpty() || to.isEmpty()) {
             throw new StephException(usageMessage);
         }
-        return new ParsedEvent(new Event(name, parseDateTime(from), parseDateTime(to)), isForce);
+
+        LocalDateTime fromDateTime = parseDateTime(from);
+        LocalDateTime toDateTime = parseDateTime(to);
+        // A date-only end (midnight) means "through the end of that day," the
+        // same reading Event#clashesWith uses -- so a same-day date-only
+        // "/from 2019-10-15 /to 2019-10-15" is a valid whole-day event, not a
+        // backwards one, even though the raw values are equal.
+        LocalDateTime effectiveEnd = DateTimes.expandIfMidnight(toDateTime);
+        if (!fromDateTime.isBefore(effectiveEnd)) {
+            throw new StephException(UNRECOGNIZED_INPUT_PREFIX
+                    + "An event's start (" + DateTimes.toDisplayFormat(fromDateTime)
+                    + ") must be before its end (" + DateTimes.toDisplayFormat(toDateTime) + ").");
+        }
+        return new ParsedEvent(new Event(name, fromDateTime, toDateTime), isForce);
     }
 
     /**

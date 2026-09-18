@@ -90,4 +90,20 @@ public final class DateTimes {
         }
         return dateTime.format(DISPLAY_WITH_TIME);
     }
+
+    /**
+     * Returns {@code boundary}, or the start of the next day if {@code boundary}
+     * is exactly midnight. A midnight boundary usually comes from a date-only
+     * user input (e.g. "2019-10-15" with no time); as the end of an event's
+     * span, that's meant to mean "through the end of that day" rather than the
+     * single instant the day begins. Used both to check whether two events'
+     * spans overlap (see {@link steph.task.Event#clashesWith}) and whether an
+     * event's start comes before its end (see {@link Parser#parseEvent}).
+     *
+     * @param boundary The date-time to expand if it falls on midnight.
+     * @return The expanded date-time, or {@code boundary} unchanged.
+     */
+    public static LocalDateTime expandIfMidnight(LocalDateTime boundary) {
+        return boundary.toLocalTime().equals(LocalTime.MIDNIGHT) ? boundary.plusDays(1) : boundary;
+    }
 }
