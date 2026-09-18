@@ -59,20 +59,26 @@ public class DialogBox extends HBox {
 
     /**
      * Adds a command-specific style class to the reply bubble so its colour
-     * signals what the command did (feature 6). Commands with no special
-     * styling (e.g. {@code list}) and error replies are left as-is.
+     * signals what the command did (feature 6), or the distinct error style
+     * (feature 7) when the command failed instead.
      *
      * @param commandType The command's {@link Command} name, or {@code ""} when
      *                    the command was not recognised.
+     * @param isError     Whether the reply is an error message; when true this
+     *                    takes precedence over {@code commandType}.
      */
-    private void changeDialogStyle(String commandType) {
+    private void changeDialogStyle(String commandType, boolean isError) {
+        if (isError) {
+            dialog.getStyleClass().add("error-label");
+            return;
+        }
         switch (commandType) {
             case "TODO", "DEADLINE", "EVENT" -> dialog.getStyleClass().add("add-label");
             case "MARK", "UNMARK" -> dialog.getStyleClass().add("marked-label");
             case "DELETE" -> dialog.getStyleClass().add("delete-label");
             case "FIND" -> dialog.getStyleClass().add("find-label");
             default -> {
-                // LIST, "bye", and unrecognised commands keep the default reply styling.
+                // LIST and "bye" keep the default reply styling.
             }
         }
     }
@@ -95,12 +101,14 @@ public class DialogBox extends HBox {
      * @param img         Steph's avatar image.
      * @param commandType The {@link Command} name that produced the reply, used
      *                    to tint the bubble; {@code ""} for none.
-     * @return A flipped, command-tinted bubble.
+     * @param isError     Whether the reply is an error message, styled distinctly
+     *                    from a successful command's reply.
+     * @return A flipped, command-tinted (or error-styled) bubble.
      */
-    public static DialogBox getStephDialog(String text, Image img, String commandType) {
+    public static DialogBox getStephDialog(String text, Image img, String commandType, boolean isError) {
         DialogBox db = new DialogBox(text, img);
         db.flip();
-        db.changeDialogStyle(commandType);
+        db.changeDialogStyle(commandType, isError);
         return db;
     }
 }

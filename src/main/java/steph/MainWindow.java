@@ -51,7 +51,7 @@ public class MainWindow extends AnchorPane {
     public void setSteph(Steph s) {
         steph = s;
         dialogContainer.getChildren().add(
-                DialogBox.getStephDialog(Steph.getWelcomeMessage(), stephImage, ""));
+                DialogBox.getStephDialog(Steph.getWelcomeMessage(), stephImage, "", false));
     }
 
     /**
@@ -69,9 +69,10 @@ public class MainWindow extends AnchorPane {
 
         String response = steph.getResponse(input);
         String commandType = steph.getCommandType();
+        boolean isError = steph.isLastResponseError();
         dialogContainer.getChildren().addAll(
                 DialogBox.getUserDialog(input, userImage),
-                DialogBox.getStephDialog(response, stephImage, commandType));
+                DialogBox.getStephDialog(response, stephImage, commandType, isError));
         userInput.clear();
 
         if (steph.isExit()) {
